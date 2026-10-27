@@ -57,6 +57,7 @@
     avatarFile = next;
     avatarPreview = next ? URL.createObjectURL(next) : '';
   }
+  $: savedLabel = savedIds.length > 99 ? '99+' : String(savedIds.length);
   function toggleSave(movie: Movie) {
     savedIds = toggleSaved(savedIds, movie.id);
     writeSaved(savedIds);
@@ -206,7 +207,7 @@
     <nav class="tabs" aria-label="Catalog sections">
       <button class:active={tab === 'movies'} aria-current={tab === 'movies' ? 'page' : undefined} onclick={() => switchTab('movies')}><Icon name="film" size={18} /><span>Movies</span></button>
       <button class:active={tab === 'people'} aria-current={tab === 'people' ? 'page' : undefined} onclick={() => switchTab('people')}><Icon name="users" size={18} /><span>Cast & creators</span></button>
-      <button class:active={tab === 'saved'} aria-current={tab === 'saved' ? 'page' : undefined} onclick={() => switchTab('saved')}><span class="tab-icon" class:has-items={savedIds.length > 0}><Icon name="bookmark" size={26} />{#if savedIds.length}<b class="count" aria-label="{savedIds.length} saved">{savedIds.length > 99 ? '99+' : savedIds.length}</b>{/if}</span><span>Saved</span></button>
+      <button class:active={tab === 'saved'} aria-current={tab === 'saved' ? 'page' : undefined} onclick={() => switchTab('saved')}><span class="tab-icon" class:has-items={savedIds.length > 0}><Icon name="bookmark" size={26} />{#if savedIds.length}<b class="count" data-len={savedLabel.length} aria-label="{savedIds.length} saved">{savedLabel}</b>{/if}</span><span>Saved</span></button>
       <button class:active={tab === 'search'} aria-current={tab === 'search' ? 'page' : undefined} onclick={() => switchTab('search')}><Icon name="compass" size={18} /><span>Explore all</span></button>
     </nav>
   </div>

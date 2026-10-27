@@ -334,3 +334,6 @@ progress { width: 100%; margin-top: 8px; accent-color: var(--accent); }
 .avatar-field { display: flex; align-items: center; gap: 16px; margin-bottom: 4px; }
 .avatar-field label { flex: 1; min-width: 0; margin-bottom: 0; }
 .stats .stat { min-width: 0; }
+/* Keep the count inside the bookmark however many digits it has. */
+.count[data-len="1"] { font-size: 0.68rem; }
+.count[data-len="3"] { font-size: 0.5rem; letter-spacing: -0.06em; }
