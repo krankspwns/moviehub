@@ -1,22 +1,23 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import {
-    deleteMovie, deletePerson, getMovies, imageProblem, listMovies, listPeople, roles, saveMovie, savePerson, search,
-    uploadArtwork, uploadAvatar,
-    type CreditInput, type Movie, type MovieInput, type Page, type Person, type PersonInput, type Role,
+    deleteMovie, deletePerson, getMovies, listMovies, listPeople, roles, search,
+    type Movie, type Page, type Person, type Role,
   } from './lib/api/catalog';
-  import { artworkSrc, hue, initials, roleLabel } from './lib/format';
-  import { parseGenres, validateMovie, validatePerson } from './lib/validate';
+  import { errorMessage, roleLabel } from './lib/format';
+  import Header, { type Tab } from './lib/components/Header.svelte';
   import Icon from './lib/components/Icon.svelte';
   import MovieCard from './lib/components/MovieCard.svelte';
-  import PersonCard from './lib/components/PersonCard.svelte';
-  import Logo from './lib/components/Logo.svelte';
   import MovieDetails from './lib/components/MovieDetails.svelte';
+  import MovieEditor from './lib/components/MovieEditor.svelte';
+  import PersonCard from './lib/components/PersonCard.svelte';
   import PersonDetails from './lib/components/PersonDetails.svelte';
+  import PersonEditor from './lib/components/PersonEditor.svelte';
+  import SearchResults from './lib/components/SearchResults.svelte';
   import { readSaved, toggleSaved, writeSaved } from './lib/state/saved';
   import { applyTheme, nextTheme, readTheme, writeTheme, type Theme } from './lib/state/theme';
 
-  type Tab = 'movies' | 'people' | 'saved' | 'search';
+  // Listing state
   let tab = $state<Tab>('movies');
   let query = $state('');
   let roleFilter = $state<Role | ''>('');
@@ -24,60 +25,26 @@
   let movies = $state<Page<Movie> | null>(null);
   let people = $state<Page<Person> | null>(null);
   let results = $state<{ movies: Movie[]; people: Person[] } | null>(null);
-  let savedIds = $state<string[]>(readSaved());
-  const initialTheme: Theme = readTheme();
-  applyTheme(initialTheme);
-  let theme = $state<Theme>(initialTheme);
   let savedMovies = $state<Movie[] | null>(null);
   let loading = $state(false);
   let busy = $state(false);
   let error = $state('');
   let notice = $state('');
-  let requestId = 0;
+  let requestId = 0; // guards against out-of-order responses
   let timer: ReturnType<typeof setTimeout>;
 
-  let modal = $state<'movie' | 'person' | null>(null);
+  // Preferences
+  let savedIds = $state<string[]>(readSaved());
+  const initialTheme: Theme = readTheme();
+  applyTheme(initialTheme);
+  let theme = $state<Theme>(initialTheme);
+
+  // Dialogs
+  let editor = $state<'movie' | 'person' | null>(null);
+  let editorMovie = $state<Movie | null>(null);
+  let editorPerson = $state<Person | null>(null);
   let viewMovie = $state<Movie | null>(null);
   let viewPerson = $state<Person | null>(null);
-  let editingMovie = $state<Movie | null>(null);
-  let editingPerson = $state<Person | null>(null);
-  let movieForm = $state<MovieInput>(blankMovie());
-  let personForm = $state<PersonInput>({ name: '', bio: '', birthDate: '' });
-  let genreText = $state('');
-  let file = $state<File | null>(null);
-  let avatarFile = $state<File | null>(null);
-  let avatarPreview = $state('');
-  let uploadPercent = $state<number | null>(null);
-  let pickerQuery = $state('');
-  let pickerPeople = $state<Person[]>([]);
-  let pickerPage = $state(0);
-  let pickerHasMore = $state(false);
-  let pickerBusy = $state(false);
-  let pickerRequestId = 0;
-  let knownPeople = $state<Record<string, string>>({});
-
-  function blankMovie(): MovieInput {
-    return { title: '', synopsis: '', releaseYear: new Date().getFullYear(), runtimeMinutes: 0, genres: [], credits: [] };
-  }
-  function message(e: unknown): string { return e instanceof Error ? e.message : 'Something went wrong. Please retry.'; }
-  function pickAvatar(next: File | null) {
-    if (avatarPreview) URL.revokeObjectURL(avatarPreview);
-    avatarFile = next;
-    avatarPreview = next ? URL.createObjectURL(next) : '';
-  }
-  const savedLabel = $derived(savedIds.length > 99 ? '99+' : String(savedIds.length));
-  function toggleTheme() { theme = nextTheme(theme); applyTheme(theme); writeTheme(theme); }
-  function closeDetail() { viewMovie = null; viewPerson = null; }
-  function onKey(event: KeyboardEvent) {
-    if (event.key !== 'Escape') return;
-    if (viewMovie || viewPerson) closeDetail();
-    else if (modal && !busy) { modal = null; error = ''; }
-  }
-  function toggleSave(movie: Movie) {
-    savedIds = toggleSaved(savedIds, movie.id);
-    writeSaved(savedIds);
-    if (tab === 'saved' && !savedIds.includes(movie.id)) savedMovies = (savedMovies ?? []).filter(m => m.id !== movie.id);
-  }
 
   async function load() {
     const current = ++requestId;
@@ -93,121 +60,47 @@
         const data = await getMovies(savedIds);
         if (current === requestId) {
           savedMovies = data;
-          if (data.length !== savedIds.length) { savedIds = data.map(m => m.id); writeSaved(savedIds); } // drop deleted movies
+          if (data.length !== savedIds.length) { savedIds = data.map((m) => m.id); writeSaved(savedIds); } // drop deleted movies
         }
       } else {
         const data = query.trim() ? await search(query.trim()) : { movies: [], people: [] };
         if (current === requestId) results = data;
       }
-    } catch (e) { if (current === requestId) error = message(e); }
+    } catch (e) { if (current === requestId) error = errorMessage(e); }
     finally { if (current === requestId) loading = false; }
   }
   onMount(() => { void load(); return () => clearTimeout(timer); });
-  function switchTab(next: Tab) {
-    tab = next; query = ''; page = 0; error = ''; notice = ''; void load();
-  }
-  function updateQuery() {
-    page = 0;
-    clearTimeout(timer);
-    timer = setTimeout(() => void load(), 300);
+
+  function switchTab(next: Tab) { tab = next; query = ''; page = 0; error = ''; notice = ''; void load(); }
+  function updateQuery() { page = 0; clearTimeout(timer); timer = setTimeout(() => void load(), 300); }
+  function jumpTo(next: 'movies' | 'people', term: string) { switchTab(next); query = term; void load(); }
+
+  function toggleTheme() { theme = nextTheme(theme); applyTheme(theme); writeTheme(theme); }
+  function toggleSave(movie: Movie) {
+    savedIds = toggleSaved(savedIds, movie.id);
+    writeSaved(savedIds);
+    if (tab === 'saved' && !savedIds.includes(movie.id)) savedMovies = (savedMovies ?? []).filter((m) => m.id !== movie.id);
   }
 
-  async function loadPicker(reset = false) {
-    if (reset) { pickerPage = 0; pickerPeople = []; pickerHasMore = false; }
-    const current = ++pickerRequestId;
-    pickerBusy = true;
-    try {
-      const data = await listPeople(pickerQuery, pickerPage);
-      if (current !== pickerRequestId) return;
-      pickerPeople = reset ? data.items : [...pickerPeople, ...data.items];
-      for (const person of data.items) knownPeople[person.id] = person.name;
-      pickerHasMore = pickerPage + 1 < data.totalPages;
-    } catch (e) { if (current === pickerRequestId) error = message(e); }
-    finally { if (current === pickerRequestId) pickerBusy = false; }
-  }
-  function openMovie(movie: Movie | null = null) {
-    editingMovie = movie;
-    movieForm = movie ? {
-      title: movie.title, synopsis: movie.synopsis, releaseYear: movie.releaseYear,
-      runtimeMinutes: movie.runtimeMinutes, genres: [...movie.genres],
-      credits: movie.credits.map(({ personId, role, characterName }) => ({ personId, role, characterName })),
-    } : blankMovie();
-    genreText = movie?.genres.join(', ') ?? '';
-    pickerQuery = ''; pickerPage = 0; pickerPeople = []; file = null; uploadPercent = null;
-    knownPeople = {};
-    for (const credit of movie?.credits ?? []) knownPeople[credit.personId] = credit.personName;
-    error = ''; modal = 'movie'; void loadPicker(true);
-  }
-  function openPerson(person: Person | null = null) {
-    editingPerson = person;
-    personForm = person ? { name: person.name, bio: person.bio, birthDate: person.birthDate ?? '' }
-      : { name: '', bio: '', birthDate: '' };
-    pickAvatar(null); uploadPercent = null;
-    error = ''; modal = 'person';
-  }
-  function addCredit() {
-    movieForm.credits = [...movieForm.credits, { personId: '', role: 'ACTOR', characterName: '' }];
-  }
-  function removeCredit(index: number) {
-    movieForm.credits = movieForm.credits.filter((_, i) => i !== index);
-  }
-  async function submitMovie() {
-    error = ''; notice = '';
-    const genres = parseGenres(genreText);
-    const movieProblem = validateMovie(movieForm, genres);
-    if (movieProblem) { error = movieProblem; return; }
-    const artworkProblem = imageProblem(file);
-    if (artworkProblem) { error = artworkProblem; return; }
-    busy = true;
-    try {
-      const saved = await saveMovie({ ...movieForm,
-        title: movieForm.title.trim(), genres,
-        credits: movieForm.credits.map(c => ({ ...c, characterName: c.role === 'ACTOR' ? c.characterName : '' })),
-      }, editingMovie?.id);
-      editingMovie = saved; // Retain the ID if the subsequent upload fails, so retry cannot create a duplicate.
-      if (file) {
-        uploadPercent = 0;
-        await uploadArtwork(saved.id, file, n => uploadPercent = n);
-        file = null;
-      }
-      modal = null; notice = 'Movie saved successfully.'; void load();
-    } catch (e) { error = message(e); }
-    finally { busy = false; uploadPercent = null; }
-  }
-  async function submitPerson() {
-    error = ''; notice = '';
-    const personProblem = validatePerson(personForm);
-    if (personProblem) { error = personProblem; return; }
-    const avatarProblem = imageProblem(avatarFile);
-    if (avatarProblem) { error = avatarProblem; return; }
-    busy = true;
-    try {
-      const saved = await savePerson({ ...personForm, name: personForm.name.trim() }, editingPerson?.id);
-      editingPerson = saved; // Retain the ID if the avatar upload fails, so retry cannot create a duplicate.
-      if (avatarFile) {
-        uploadPercent = 0;
-        await uploadAvatar(saved.id, avatarFile, n => uploadPercent = n);
-        pickAvatar(null);
-      }
-      modal = null; notice = 'Person saved successfully.'; void load();
-    } catch (e) { error = message(e); }
-    finally { busy = false; uploadPercent = null; }
-  }
+  function closeDetail() { viewMovie = null; viewPerson = null; }
+  function onKey(event: KeyboardEvent) { if (event.key === 'Escape' && (viewMovie || viewPerson)) closeDetail(); }
+  function openMovie(movie: Movie | null = null) { editorMovie = movie; editor = 'movie'; }
+  function openPerson(person: Person | null = null) { editorPerson = person; editor = 'person'; }
+  function saved(what: string) { editor = null; notice = `${what} saved successfully.`; void load(); }
+
   async function remove(kind: 'movie' | 'person', id: string, name: string) {
-    if (!confirm(`Delete ${name}? This cannot be undone${kind === 'person' ? ' and will remove their movie credits' : ''}.`)) return;
+    const extra = kind === 'person' ? ' and will remove their movie credits' : '';
+    if (!confirm(`Delete ${name}? This cannot be undone${extra}.`)) return;
     busy = true; error = ''; notice = '';
     try {
       const deleted = kind === 'movie' ? await deleteMovie(id) : await deletePerson(id);
       if (!deleted) throw new Error(`${name} no longer exists. Refresh the list.`);
       notice = `${name} deleted.`;
-      if (kind === 'movie' && savedIds.includes(id)) { savedIds = savedIds.filter(s => s !== id); writeSaved(savedIds); }
+      if (kind === 'movie' && savedIds.includes(id)) { savedIds = savedIds.filter((s) => s !== id); writeSaved(savedIds); }
       if (page > 0 && (kind === 'movie' ? movies?.items.length : people?.items.length) === 1) page--;
       await load();
-    } catch (e) { error = message(e); }
+    } catch (e) { error = errorMessage(e); }
     finally { busy = false; }
-  }
-  function chosenPerson(id: string, credit: CreditInput): string {
-    return knownPeople[id] || editingMovie?.credits.find(c => c.personId === id)?.personName || credit.personId;
   }
 </script>
 
@@ -218,18 +111,7 @@
   <meta name="description" content="Browse and manage movies, artwork, cast and creators." />
 </svelte:head>
 
-<header class="topbar">
-  <div class="wrap header-inner">
-    <div class="brand"><Logo size={34} /> MovieHub</div>
-    <nav class="tabs" aria-label="Catalog sections">
-      <button class:active={tab === 'movies'} aria-current={tab === 'movies' ? 'page' : undefined} onclick={() => switchTab('movies')}><Icon name="film" size={18} /><span>Movies</span></button>
-      <button class:active={tab === 'people'} aria-current={tab === 'people' ? 'page' : undefined} onclick={() => switchTab('people')}><Icon name="users" size={18} /><span>Cast & creators</span></button>
-      <button class:active={tab === 'saved'} aria-current={tab === 'saved' ? 'page' : undefined} onclick={() => switchTab('saved')}><span class="tab-icon" class:has-items={savedIds.length > 0}><Icon name="bookmark" size={26} />{#if savedIds.length}<b class="count" data-len={savedLabel.length} aria-label="{savedIds.length} saved">{savedLabel}</b>{/if}</span><span>Saved</span></button>
-      <button class:active={tab === 'search'} aria-current={tab === 'search' ? 'page' : undefined} onclick={() => switchTab('search')}><Icon name="compass" size={18} /><span>Explore all</span></button>
-    </nav>
-    <button type="button" class="theme-toggle" aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'} title={theme === 'dark' ? 'Light theme' : 'Dark theme'} onclick={toggleTheme}><Icon name={theme === 'dark' ? 'sun' : 'moon'} size={19} /></button>
-  </div>
-</header>
+<Header {tab} savedCount={savedIds.length} {theme} onswitch={switchTab} ontheme={toggleTheme} />
 <main class="wrap">
   <section class="hero">
     <div>
@@ -243,17 +125,32 @@
       <div class="stat"><strong>{savedIds.length}</strong><span>Saved</span></div>
     </div>
   </section>
-  {#if tab !== 'saved'}<div class="toolbar">
-    <div class="searchbox"><Icon name="search" size={19} /><input aria-label="Search" placeholder={tab === 'movies' ? 'Search movies, genres, cast…' : tab === 'people' ? 'Search cast & creators…' : 'Search everything…'} bind:value={query} oninput={updateQuery} /></div>
-    {#if tab === 'people'}
-      <select aria-label="Filter by role" bind:value={roleFilter} onchange={() => { page = 0; void load(); }}>
-        <option value="">All roles</option>{#each roles as role}<option value={role}>{roleLabel(role)}</option>{/each}
-      </select>
-    {/if}
-    {#if tab !== 'search'}<button class="primary add-btn" disabled={busy} onclick={() => tab === 'movies' ? openMovie() : openPerson()}><Icon name="plus" size={18} /><span>Add {tab === 'movies' ? 'movie' : 'person'}</span></button>{/if}
-  </div>{/if}
+
+  {#if tab !== 'saved'}
+    <div class="toolbar">
+      <div class="searchbox">
+        <Icon name="search" size={19} />
+        <input
+          aria-label="Search" bind:value={query} oninput={updateQuery}
+          placeholder={tab === 'movies' ? 'Search movies, genres, cast…' : tab === 'people' ? 'Search cast & creators…' : 'Search everything…'}
+        />
+      </div>
+      {#if tab === 'people'}
+        <select aria-label="Filter by role" bind:value={roleFilter} onchange={() => { page = 0; void load(); }}>
+          <option value="">All roles</option>
+          {#each roles as role}<option value={role}>{roleLabel(role)}</option>{/each}
+        </select>
+      {/if}
+      {#if tab === 'movies' || tab === 'people'}
+        <button class="primary add-btn" disabled={busy} onclick={() => (tab === 'movies' ? openMovie() : openPerson())}>
+          <Icon name="plus" size={18} /><span>Add {tab === 'movies' ? 'movie' : 'person'}</span>
+        </button>
+      {/if}
+    </div>
+  {/if}
+
   {#if notice}<p class="alert success" role="status">{notice}</p>{/if}
-  {#if error && !modal}<div class="alert failure" role="alert"><span>{error}</span> <button onclick={() => void load()}>Retry</button></div>{/if}
+  {#if error}<div class="alert failure" role="alert"><span>{error}</span> <button onclick={() => void load()}>Retry</button></div>{/if}
   {#if loading}
     <p class="sr-only" role="status">Loading {tab === 'search' ? 'results' : tab}…</p>
     <div class="grid skeletons" aria-hidden="true">{#each [1, 2, 3, 4] as n (n)}<div class="skeleton"></div>{/each}</div>
@@ -263,97 +160,69 @@
     <div class="section-heading"><h2>Movies</h2>{#if movies}<span>{movies.total} titles</span>{/if}</div>
     {#if movies && (!loading || movies.items.length)}
       {#if !movies.items.length}<p class="empty">No movies found. Try another search or add your first movie.</p>{/if}
-      <div class="grid">{#each movies.items as movie (movie.id)}
-        <MovieCard {movie} {busy} saved={savedIds.includes(movie.id)} ontoggle={() => toggleSave(movie)} onopen={() => viewMovie = movie} onedit={() => openMovie(movie)} ondelete={() => void remove('movie', movie.id, movie.title)} />
-      {/each}</div>
+      <div class="grid">
+        {#each movies.items as movie (movie.id)}
+          <MovieCard
+            {movie} {busy} saved={savedIds.includes(movie.id)} ontoggle={() => toggleSave(movie)}
+            onopen={() => (viewMovie = movie)} onedit={() => openMovie(movie)}
+            ondelete={() => void remove('movie', movie.id, movie.title)}
+          />
+        {/each}
+      </div>
     {/if}
   {:else if tab === 'saved'}
     <div class="section-heading"><h2>Saved movies</h2><span>{savedIds.length} saved</span></div>
     {#if !savedIds.length}
       <p class="empty">Nothing saved yet. Tap the bookmark on any movie to keep it here for later.</p>
     {:else if savedMovies && (!loading || savedMovies.length)}
-      <div class="grid">{#each savedMovies as movie (movie.id)}
-        <MovieCard {movie} {busy} saved={true} ontoggle={() => toggleSave(movie)} onopen={() => viewMovie = movie} onedit={() => openMovie(movie)} ondelete={() => void remove('movie', movie.id, movie.title)} />
-      {/each}</div>
+      <div class="grid">
+        {#each savedMovies as movie (movie.id)}
+          <MovieCard
+            {movie} {busy} saved={true} ontoggle={() => toggleSave(movie)}
+            onopen={() => (viewMovie = movie)} onedit={() => openMovie(movie)}
+            ondelete={() => void remove('movie', movie.id, movie.title)}
+          />
+        {/each}
+      </div>
     {/if}
   {:else if tab === 'people'}
     <div class="section-heading"><h2>Cast & creators</h2>{#if people}<span>{people.total} people</span>{/if}</div>
     {#if people && (!loading || people.items.length)}
       {#if !people.items.length}<p class="empty">No people found. Try another search or add someone.</p>{/if}
-      <div class="grid people-grid">{#each people.items as person (person.id)}
-        <PersonCard {person} {busy} onopen={() => viewPerson = person} onedit={() => openPerson(person)} ondelete={() => void remove('person', person.id, person.name)} />
-      {/each}</div>
+      <div class="grid people-grid">
+        {#each people.items as person (person.id)}
+          <PersonCard
+            {person} {busy} onopen={() => (viewPerson = person)} onedit={() => openPerson(person)}
+            ondelete={() => void remove('person', person.id, person.name)}
+          />
+        {/each}
+      </div>
     {/if}
   {:else}
     <div class="section-heading"><h2>Explore all</h2></div>
-    {#if !query.trim()}<p class="empty">Search movies, cast, and creators in one place.</p>
+    {#if !query.trim()}
+      <p class="empty">Search movies, cast, and creators in one place.</p>
     {:else if results}
-      {#if !results.movies.length && !results.people.length && !loading}<p class="empty">No matches found.</p>{/if}
-      <div class="search-results"><h3>Movies <span>{results.movies.length}</span></h3>
-        {#each results.movies as movie (movie.id)}<div class="result-row"><div class="result-thumb" style="--hue: {hue(movie.title)}">{#if movie.artworkUrl}<img src={artworkSrc(movie.artworkUrl)} alt="" />{:else}<Icon name="film" size={20} />{/if}</div><div class="result-text"><strong>{movie.title}</strong><p>{movie.releaseYear} · {movie.genres.join(', ') || 'Film'}</p></div><button onclick={() => { const title = movie.title; switchTab('movies'); query = title; void load(); }}>View</button></div>{/each}
-        <h3>People <span>{results.people.length}</span></h3>
-        {#each results.people as person (person.id)}<div class="result-row"><div class="result-thumb round" style="--hue: {hue(person.name)}">{#if person.avatarUrl}<img src={artworkSrc(person.avatarUrl)} alt="" />{:else}{initials(person.name)}{/if}</div><div class="result-text"><strong>{person.name}</strong><p>{person.filmography.length} film credits</p></div><button onclick={() => { const name = person.name; switchTab('people'); query = name; void load(); }}>View</button></div>{/each}
-      </div>
+      <SearchResults {results} {loading} onviewmovie={(title) => jumpTo('movies', title)} onviewperson={(name) => jumpTo('people', name)} />
     {/if}
   {/if}
+
   {#if tab === 'movies' || tab === 'people'}
     {@const listing = tab === 'movies' ? movies : people}
     {#if listing && listing.totalPages > 1}
-      <div class="pagination"><button disabled={loading || page === 0} onclick={() => { page--; void load(); }}><Icon name="prev" size={16} /> Previous</button><span>Page {page + 1} of {listing.totalPages}</span><button disabled={loading || page + 1 >= listing.totalPages} onclick={() => { page++; void load(); }}>Next <Icon name="next" size={16} /></button></div>
+      <div class="pagination">
+        <button disabled={loading || page === 0} onclick={() => { page--; void load(); }}><Icon name="prev" size={16} /> Previous</button>
+        <span>Page {page + 1} of {listing.totalPages}</span>
+        <button disabled={loading || page + 1 >= listing.totalPages} onclick={() => { page++; void load(); }}>Next <Icon name="next" size={16} /></button>
+      </div>
     {/if}
   {/if}
 </main>
 
-{#if modal}
-  <div class="backdrop"><dialog open class="dialog" aria-modal="true" aria-label={modal === 'movie' ? 'Movie editor' : 'Person editor'}>
-    <div class="dialog-head"><h2>{modal === 'movie' ? editingMovie ? 'Edit movie' : 'Add a movie' : editingPerson ? 'Edit person' : 'Add a person'}</h2><button class="close" aria-label="Close" disabled={busy} onclick={() => { modal = null; error = ''; }}><Icon name="close" size={20} /></button></div>
-    {#if error}<p class="alert failure" role="alert">{error}</p>{/if}
-    {#if modal === 'movie'}
-      <form onsubmit={(event) => { event.preventDefault(); void submitMovie(); }}>
-        <label>Title <input required maxlength="200" bind:value={movieForm.title} /></label>
-        <div class="two-col"><label>Release year <input required type="number" min="1888" max={new Date().getFullYear() + 10} bind:value={movieForm.releaseYear} /></label><label>Runtime (minutes) <input type="number" min="0" max="1000" bind:value={movieForm.runtimeMinutes} /></label></div>
-        <label>Synopsis <textarea maxlength="4000" rows="3" bind:value={movieForm.synopsis}></textarea></label>
-        <label>Genres <input placeholder="Drama, Adventure" bind:value={genreText} /><small>Separate genres with commas</small></label>
-        <div class="form-section"><div class="form-section-title"><h3>Cast & creators</h3><button type="button" onclick={addCredit}>+ Add credit</button></div>
-          {#if movieForm.credits.length}
-            <label>Find a person <input placeholder="Filter available people…" bind:value={pickerQuery} oninput={() => void loadPicker(true)} /></label>
-            {#each movieForm.credits as credit, index}
-              <div class="credit-editor"><select aria-label="Person" bind:value={credit.personId} required>
-                <option value="">Select person</option>
-                {#if credit.personId && !pickerPeople.some(p => p.id === credit.personId)}<option value={credit.personId}>{chosenPerson(credit.personId, credit)}</option>{/if}
-                {#each pickerPeople as person (person.id)}<option value={person.id}>{person.name}</option>{/each}
-              </select><select aria-label="Role" bind:value={credit.role}>{#each roles as role}<option value={role}>{role}</option>{/each}</select>
-              {#if credit.role === 'ACTOR'}<input aria-label="Character name" placeholder="Character (optional)" maxlength="200" bind:value={credit.characterName} />{/if}
-              <button type="button" class="danger" aria-label="Remove credit" onclick={() => removeCredit(index)}>×</button></div>
-            {/each}
-            {#if pickerHasMore}<button type="button" disabled={pickerBusy} onclick={() => { pickerPage++; void loadPicker(); }}>Load more people</button>{/if}
-            {#if !pickerPeople.length}<p class="hint">No people found. Add them in Cast & creators first.</p>{/if}
-          {/if}
-        </div>
-        <div class="form-section"><h3>Artwork</h3>{#if editingMovie?.artworkUrl}<img class="art-preview" src={artworkSrc(editingMovie.artworkUrl)} alt="Current artwork" />{/if}
-          <label>Upload image <input type="file" accept="image/jpeg,image/png,image/webp" onchange={(event) => file = event.currentTarget.files?.[0] ?? null} /><small>JPEG, PNG or WebP · maximum 5 MB</small></label>
-          {#if uploadPercent !== null}<div role="status">Uploading artwork: {uploadPercent}% <progress value={uploadPercent} max="100"></progress></div>{/if}
-        </div>
-        <div class="dialog-actions"><button type="button" disabled={busy} onclick={() => { modal = null; error = ''; }}>Cancel</button><button class="primary" type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save movie'}</button></div>
-      </form>
-    {:else}
-      <form onsubmit={(event) => { event.preventDefault(); void submitPerson(); }}>
-        <div class="avatar-field">
-          <div class="avatar large" style="--hue: {hue(personForm.name || 'new')}">
-            {#if avatarPreview}<img src={avatarPreview} alt="Selected preview" />
-            {:else if editingPerson?.avatarUrl}<img src={artworkSrc(editingPerson.avatarUrl)} alt="Current avatar" />
-            {:else}<span aria-hidden="true">{initials(personForm.name)}</span>{/if}
-          </div>
-          <label>Photo <input type="file" accept="image/jpeg,image/png,image/webp" onchange={(event) => pickAvatar(event.currentTarget.files?.[0] ?? null)} /><small>JPEG, PNG or WebP · maximum 5 MB</small></label>
-        </div>
-        {#if uploadPercent !== null}<div role="status">Uploading photo: {uploadPercent}% <progress value={uploadPercent} max="100"></progress></div>{/if}
-        <label>Name <input required maxlength="200" bind:value={personForm.name} /></label>
-        <label>Birth date <input type="date" max={new Date().toISOString().slice(0, 10)} bind:value={personForm.birthDate} /></label>
-        <label>Biography <textarea maxlength="4000" rows="5" bind:value={personForm.bio}></textarea></label>
-        <div class="dialog-actions"><button type="button" disabled={busy} onclick={() => { modal = null; error = ''; }}>Cancel</button><button class="primary" type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save person'}</button></div>
-      </form>
-    {/if}
-  </dialog></div>
+{#if editor === 'movie'}
+  <MovieEditor movie={editorMovie} onsaved={() => saved('Movie')} onclose={() => (editor = null)} />
+{:else if editor === 'person'}
+  <PersonEditor person={editorPerson} onsaved={() => saved('Person')} onclose={() => (editor = null)} />
 {/if}
 
 {#if viewMovie || viewPerson}
@@ -361,8 +230,10 @@
     <dialog open class="dialog detail" aria-modal="true" aria-label={viewMovie ? 'Movie details' : 'Person details'}>
       {#if viewMovie}
         {@const shown = viewMovie}
-        <MovieDetails movie={shown} saved={savedIds.includes(shown.id)} onclose={closeDetail}
-          ontoggle={() => toggleSave(shown)} onedit={() => { closeDetail(); openMovie(shown); }} />
+        <MovieDetails
+          movie={shown} saved={savedIds.includes(shown.id)} onclose={closeDetail}
+          ontoggle={() => toggleSave(shown)} onedit={() => { closeDetail(); openMovie(shown); }}
+        />
       {:else if viewPerson}
         {@const shown = viewPerson}
         <PersonDetails person={shown} onclose={closeDetail} onedit={() => { closeDetail(); openPerson(shown); }} />

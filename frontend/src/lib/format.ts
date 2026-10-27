@@ -18,3 +18,6 @@ export function hue(seed: string): number {
   return value;
 }
 
+export function errorMessage(e: unknown): string {
+  return e instanceof Error ? e.message : 'Something went wrong. Please retry.';
+}
