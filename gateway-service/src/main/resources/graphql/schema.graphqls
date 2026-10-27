@@ -1,0 +1,113 @@
+"A role a person can have on a movie."
+enum Role {
+    ACTOR
+    DIRECTOR
+    WRITER
+    PRODUCER
+    COMPOSER
+}
+
+type Movie {
+    id: ID!
+    title: String!
+    synopsis: String!
+    releaseYear: Int!
+    "Minutes; 0 when unknown."
+    runtimeMinutes: Int!
+    genres: [String!]!
+    "Relative URL of the artwork image, or null when none has been uploaded. Includes a cache-busting version."
+    artworkUrl: String
+    credits: [Credit!]!
+    createdAt: String!
+    updatedAt: String!
+}
+
+type Credit {
+    personId: ID!
+    personName: String!
+    role: Role!
+    "Only set for ACTOR credits (empty string otherwise)."
+    characterName: String!
+}
+
+type Person {
+    id: ID!
+    name: String!
+    bio: String!
+    "ISO-8601 date (yyyy-MM-dd) or null."
+    birthDate: String
+    filmography: [FilmographyEntry!]!
+}
+
+type FilmographyEntry {
+    movieId: ID!
+    title: String!
+    role: Role!
+}
+
+type MoviePage {
+    items: [Movie!]!
+    total: Int!
+    page: Int!
+    pageSize: Int!
+    totalPages: Int!
+}
+
+type PersonPage {
+    items: [Person!]!
+    total: Int!
+    page: Int!
+    pageSize: Int!
+    totalPages: Int!
+}
+
+type SearchResult {
+    movies: [Movie!]!
+    people: [Person!]!
+}
+
+input CreditInput {
+    personId: ID!
+    role: Role!
+    characterName: String
+}
+
+input MovieInput {
+    title: String!
+    synopsis: String
+    releaseYear: Int!
+    runtimeMinutes: Int
+    genres: [String!]
+    credits: [CreditInput!]
+}
+
+input PersonInput {
+    name: String!
+    bio: String
+    "ISO-8601 date (yyyy-MM-dd); omit or empty when unknown."
+    birthDate: String
+}
+
+type Query {
+    "Paged list of movies; `query` filters by title, synopsis, genre or credited person."
+    movies(query: String, page: Int = 0, pageSize: Int = 12): MoviePage!
+    "Null when the movie does not exist."
+    movie(id: ID!): Movie
+    people(query: String, role: Role, page: Int = 0, pageSize: Int = 12): PersonPage!
+    "Null when the person does not exist."
+    person(id: ID!): Person
+    "Searches movies and people at once."
+    search(query: String!, limit: Int = 10): SearchResult!
+}
+
+type Mutation {
+    createMovie(input: MovieInput!): Movie!
+    updateMovie(id: ID!, input: MovieInput!): Movie!
+    "Returns false when the movie did not exist."
+    deleteMovie(id: ID!): Boolean!
+    createPerson(input: PersonInput!): Person!
+    updatePerson(id: ID!, input: PersonInput!): Person!
+    "Also removes the person's credits from all movies. Returns false when the person did not exist."
+    deletePerson(id: ID!): Boolean!
+}
+
