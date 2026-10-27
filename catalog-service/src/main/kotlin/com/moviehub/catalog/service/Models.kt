@@ -39,6 +39,8 @@ data class PersonView(
     val bio: String,
     val birthDate: LocalDate?,
     val filmography: List<FilmographyEntry>,
+    val hasAvatar: Boolean = false,
+    val avatarVersion: Long = 0,
 )
 
 data class PageView<T>(val items: List<T>, val total: Long)

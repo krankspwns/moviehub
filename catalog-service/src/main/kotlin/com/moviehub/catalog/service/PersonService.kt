@@ -16,6 +16,7 @@ import java.time.format.DateTimeParseException
 @Service
 class PersonService(
     private val people: PersonRepository,
+    private val artworkStorage: ArtworkStorage,
     private val clock: Clock,
 ) {
 
@@ -60,6 +61,7 @@ class PersonService(
     fun delete(id: String): Boolean {
         val person = people.findById(id).orElse(null) ?: return false
         people.delete(person)
+        artworkStorage.delete(id)
         return true
     }
 

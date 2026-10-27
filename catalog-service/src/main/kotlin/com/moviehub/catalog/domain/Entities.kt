@@ -78,6 +78,12 @@ class PersonEntity(
     @OneToMany(mappedBy = "person", cascade = [CascadeType.REMOVE], orphanRemoval = true)
     var credits: MutableList<CreditEntity> = mutableListOf(),
 
+    @Column(name = "avatar_content_type", length = 100)
+    var avatarContentType: String? = null,
+
+    @Column(name = "avatar_version", nullable = false)
+    var avatarVersion: Long = 0,
+
     @Column(name = "created_at", nullable = false)
     var createdAt: Instant = Instant.now(),
 

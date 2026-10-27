@@ -59,6 +59,8 @@ fun PersonView.toProto(): Person = Person.newBuilder()
             PersonMovie.newBuilder().setMovieId(it.movieId).setTitle(it.title).setRole(it.role.toProto()).build()
         },
     )
+    .setHasAvatar(hasAvatar)
+    .setAvatarVersion(avatarVersion)
     .build()
 
 fun MovieInput.toCommand() = MovieCommand(

@@ -29,6 +29,9 @@ service CatalogService {
   // Artwork (chunked so large files never need to be fully buffered)
   rpc UploadArtwork(stream UploadArtworkRequest) returns (ArtworkInfo);
   rpc DownloadArtwork(GetByIdRequest) returns (stream ArtworkChunk);
+
+  // Person avatars reuse UploadArtwork (ArtworkMetadata.kind = PERSON).
+  rpc DownloadAvatar(GetByIdRequest) returns (stream ArtworkChunk);
 }
 
 enum Role {
@@ -112,6 +115,8 @@ message Person {
   string bio = 3;
   string birth_date = 4; // ISO-8601 (yyyy-MM-dd) or empty
   repeated PersonMovie filmography = 5;
+  bool has_avatar = 6;
+  int64 avatar_version = 7; // changes whenever the avatar changes (cache busting)
 }
 
 message PersonInput {
@@ -147,9 +152,15 @@ message SearchResponse {
   repeated Person people = 2;
 }
 
+enum ArtworkKind {
+  ARTWORK_KIND_MOVIE = 0; // default keeps older clients working
+  ARTWORK_KIND_PERSON = 1;
+}
+
 message ArtworkMetadata {
-  string movie_id = 1;
+  string movie_id = 1; // id of the movie, or of the person when kind = PERSON
   string content_type = 2;
+  ArtworkKind kind = 3;
 }
 
 message UploadArtworkRequest {

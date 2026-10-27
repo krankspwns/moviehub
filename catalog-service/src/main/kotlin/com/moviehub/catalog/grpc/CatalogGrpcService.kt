@@ -4,6 +4,8 @@ import com.google.protobuf.ByteString
 import com.moviehub.catalog.domain.ValidationException
 import com.moviehub.catalog.service.ArtworkService
 import com.moviehub.catalog.service.ArtworkUpload
+import com.moviehub.catalog.service.ImageOwner
+import com.moviehub.catalog.service.StoredArtwork
 import com.moviehub.catalog.service.MovieService
 import com.moviehub.catalog.service.PersonService
 import com.moviehub.catalog.service.SearchService
@@ -99,7 +101,8 @@ class CatalogGrpcService(
                     when (message.payloadCase) {
                         UploadArtworkRequest.PayloadCase.METADATA -> {
                             if (upload != null) throw ValidationException("metadata must be sent exactly once")
-                            upload = artwork.begin(message.metadata.movieId, message.metadata.contentType)
+                            val owner = if (message.metadata.kind == ArtworkKind.ARTWORK_KIND_PERSON) ImageOwner.PERSON else ImageOwner.MOVIE
+                            upload = artwork.begin(owner, message.metadata.movieId, message.metadata.contentType)
                         }
                         UploadArtworkRequest.PayloadCase.CHUNK -> {
                             val current = upload ?: throw ValidationException("metadata must be the first message")
@@ -143,8 +146,13 @@ class CatalogGrpcService(
             }
         }
 
-    override fun downloadArtwork(request: GetByIdRequest, observer: StreamObserver<ArtworkChunk>) {
-        val stored = artwork.open(request.id)
+    override fun downloadArtwork(request: GetByIdRequest, observer: StreamObserver<ArtworkChunk>) =
+        stream(artwork.open(ImageOwner.MOVIE, request.id), observer)
+
+    override fun downloadAvatar(request: GetByIdRequest, observer: StreamObserver<ArtworkChunk>) =
+        stream(artwork.open(ImageOwner.PERSON, request.id), observer)
+
+    private fun stream(stored: StoredArtwork, observer: StreamObserver<ArtworkChunk>) {
         stored.stream.use { input ->
             var first = true
             val buffer = ByteArray(DOWNLOAD_CHUNK_SIZE)

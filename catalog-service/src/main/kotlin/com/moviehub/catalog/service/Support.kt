@@ -60,5 +60,7 @@ fun PersonEntity.toView() = PersonView(
     filmography = credits
         .map { FilmographyEntry(it.movie!!.id, it.movie!!.title, it.role) }
         .sortedWith(compareBy({ it.title.lowercase() }, { it.role })),
+    hasAvatar = avatarContentType != null,
+    avatarVersion = avatarVersion,
 )
 

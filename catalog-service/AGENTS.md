@@ -12,7 +12,7 @@ Package root: `src/main/kotlin/com/moviehub/catalog/`
 
 Rules
 - Validation lives in `service/` and throws `ValidationException`; `grpc/` must stay a thin adapter.
-- Artwork: JPEG/PNG/WebP, max 5 MiB, 64 KiB chunks; deleting a movie deletes its file.
+- Artwork: JPEG/PNG/WebP, max 5 MiB, 64 KiB chunks; deleting a movie deletes its file. People have avatars via the same pipeline (`ImageOwner.PERSON`, columns `avatar_*`, migration V2); deleting a person deletes the avatar.
 - Tests: `src/test/kotlin/com/moviehub/catalog/` (`IntegrationTestBase` provides the Spring context). One test class per service. Run `./gradlew :catalog-service:test`.
 - Local run uses `./data`; for throwaway runs pass `--args='--moviehub.data-dir=/tmp/x'`.
 

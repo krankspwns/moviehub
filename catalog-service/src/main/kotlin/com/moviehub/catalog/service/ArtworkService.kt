@@ -2,6 +2,7 @@ package com.moviehub.catalog.service
 
 import com.moviehub.catalog.domain.MovieRepository
 import com.moviehub.catalog.domain.NotFoundException
+import com.moviehub.catalog.domain.PersonRepository
 import com.moviehub.catalog.domain.ValidationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -13,12 +14,16 @@ import java.nio.file.StandardOpenOption
 import java.time.Clock
 import java.time.Instant
 
+/** What an image belongs to: a movie poster or a person's avatar. */
+enum class ImageOwner(val label: String) { MOVIE("Movie"), PERSON("Person") }
+
 /** An in-flight upload. Bytes are spooled to a temp file so memory use stays constant. */
 class ArtworkUpload internal constructor(
     val movieId: String,
     val contentType: String,
     internal val tempFile: Path,
     private val maxSizeBytes: Long,
+    val owner: ImageOwner = ImageOwner.MOVIE,
 ) : AutoCloseable {
 
     private val out: OutputStream = Files.newOutputStream(tempFile, StandardOpenOption.WRITE)
@@ -45,19 +50,27 @@ class StoredArtwork(val contentType: String, val stream: InputStream)
 @Service
 class ArtworkService(
     private val movies: MovieRepository,
+    private val people: PersonRepository,
     private val storage: ArtworkStorage,
     private val properties: ArtworkProperties,
     private val clock: Clock,
 ) {
 
     /** Validates the target and declared content type before any bytes are accepted. */
-    fun begin(movieId: String, declaredContentType: String): ArtworkUpload {
+    fun begin(movieId: String, declaredContentType: String): ArtworkUpload =
+        begin(ImageOwner.MOVIE, movieId, declaredContentType)
+
+    fun begin(owner: ImageOwner, id: String, declaredContentType: String): ArtworkUpload {
         val contentType = declaredContentType.substringBefore(';').trim().lowercase()
         if (contentType !in properties.allowedContentTypes) {
             throw ValidationException("unsupported content type '$contentType'; allowed: ${properties.allowedContentTypes}")
         }
-        if (!movies.existsById(movieId)) throw NotFoundException("Movie $movieId not found")
-        return ArtworkUpload(movieId, contentType, storage.newTempFile(), properties.maxSizeBytes)
+        val exists = when (owner) {
+            ImageOwner.MOVIE -> movies.existsById(id)
+            ImageOwner.PERSON -> people.existsById(id)
+        }
+        if (!exists) throw NotFoundException("${owner.label} $id not found")
+        return ArtworkUpload(id, contentType, storage.newTempFile(), properties.maxSizeBytes, owner)
     }
 
     /** Discards a failed/cancelled upload. Safe to call more than once. */
@@ -74,14 +87,28 @@ class ArtworkService(
             if (!matchesSignature(upload.tempFile, upload.contentType)) {
                 throw ValidationException("file content does not match declared type ${upload.contentType}")
             }
-            val movie = movies.findById(upload.movieId)
-                .orElseThrow { NotFoundException("Movie ${upload.movieId} not found") }
-            storage.commit(upload.tempFile, movie.id)
-            movie.artworkContentType = upload.contentType
-            movie.artworkVersion += 1
-            movie.updatedAt = Instant.now(clock)
-            movies.save(movie)
-            return ArtworkInfoView(movie.id, upload.contentType, upload.size, movie.artworkVersion)
+            val now = Instant.now(clock)
+            val version = when (upload.owner) {
+                ImageOwner.MOVIE -> {
+                    val movie = movies.findById(upload.movieId)
+                        .orElseThrow { NotFoundException("Movie ${upload.movieId} not found") }
+                    storage.commit(upload.tempFile, movie.id)
+                    movie.artworkContentType = upload.contentType
+                    movie.artworkVersion += 1
+                    movie.updatedAt = now
+                    movies.save(movie).artworkVersion
+                }
+                ImageOwner.PERSON -> {
+                    val person = people.findById(upload.movieId)
+                        .orElseThrow { NotFoundException("Person ${upload.movieId} not found") }
+                    storage.commit(upload.tempFile, person.id)
+                    person.avatarContentType = upload.contentType
+                    person.avatarVersion += 1
+                    person.updatedAt = now
+                    people.save(person).avatarVersion
+                }
+            }
+            return ArtworkInfoView(upload.movieId, upload.contentType, upload.size, version)
         } catch (e: Exception) {
             storage.deleteTemp(upload.tempFile)
             throw e
@@ -89,11 +116,16 @@ class ArtworkService(
     }
 
     @Transactional(readOnly = true)
-    fun open(movieId: String): StoredArtwork {
-        val movie = movies.findById(movieId).orElseThrow { NotFoundException("Movie $movieId not found") }
-        val type = movie.artworkContentType
-        if (type == null || !storage.exists(movieId)) throw NotFoundException("Movie $movieId has no artwork")
-        return StoredArtwork(type, storage.open(movieId))
+    fun open(movieId: String): StoredArtwork = open(ImageOwner.MOVIE, movieId)
+
+    @Transactional(readOnly = true)
+    fun open(owner: ImageOwner, id: String): StoredArtwork {
+        val type = when (owner) {
+            ImageOwner.MOVIE -> movies.findById(id).orElseThrow { NotFoundException("Movie $id not found") }.artworkContentType
+            ImageOwner.PERSON -> people.findById(id).orElseThrow { NotFoundException("Person $id not found") }.avatarContentType
+        }
+        if (type == null || !storage.exists(id)) throw NotFoundException("${owner.label} $id has no image")
+        return StoredArtwork(type, storage.open(id))
     }
 
     private fun matchesSignature(file: Path, contentType: String): Boolean {
@@ -108,5 +140,4 @@ class ArtworkService(
         }
     }
 }
-
 

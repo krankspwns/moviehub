@@ -4,8 +4,11 @@ import com.moviehub.catalog.domain.NotFoundException
 import com.moviehub.catalog.domain.ValidationException
 import com.moviehub.catalog.service.ArtworkService
 import com.moviehub.catalog.service.ArtworkStorage
+import com.moviehub.catalog.service.ImageOwner
 import com.moviehub.catalog.service.MovieCommand
 import com.moviehub.catalog.service.MovieService
+import com.moviehub.catalog.service.PersonCommand
+import com.moviehub.catalog.service.PersonService
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
@@ -19,6 +22,7 @@ class ArtworkServiceTest : IntegrationTestBase() {
     @Autowired lateinit var artwork: ArtworkService
     @Autowired lateinit var storage: ArtworkStorage
     @Autowired lateinit var movies: MovieService
+    @Autowired lateinit var people: PersonService
 
     private fun newMovie() = movies.create(MovieCommand("M", "", 2000, 0, emptyList(), emptyList())).id
 
@@ -135,8 +139,38 @@ class ArtworkServiceTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `person avatar can be uploaded, replaced, opened and is removed with the person`() {
+        val id = people.create(PersonCommand("Ada")).id
+        assertFalse(people.get(id).hasAvatar)
+
+        fun avatar(type: String, bytes: ByteArray) = artwork.begin(ImageOwner.PERSON, id, type).let { up ->
+            up.write(bytes)
+            artwork.complete(up)
+        }
+        assertEquals(1, avatar("image/png", Images.PNG).version)
+        assertEquals(2, avatar("image/jpeg", Images.JPEG).version)
+
+        val person = people.get(id)
+        assertTrue(person.hasAvatar)
+        assertEquals(2, person.avatarVersion)
+        val stored = artwork.open(ImageOwner.PERSON, id)
+        assertEquals("image/jpeg", stored.contentType)
+        assertContentEquals(Images.JPEG, stored.stream.use { it.readAllBytes() })
+
+        people.delete(id)
+        assertFalse(storage.exists(id))
+    }
+
+    @Test
+    fun `avatar upload validates owner and does not touch movies`() {
+        assertThrows<NotFoundException> { artwork.begin(ImageOwner.PERSON, "missing", "image/png") }
+        val movieId = newMovie()
+        assertThrows<NotFoundException> { artwork.begin(ImageOwner.PERSON, movieId, "image/png") }
+        assertThrows<NotFoundException> { artwork.open(ImageOwner.PERSON, movieId) }
+    }
+
+    @Test
     fun `storage refuses path traversal ids`() {
         assertThrows<IllegalArgumentException> { storage.exists("../../etc/passwd") }
     }
 }
-

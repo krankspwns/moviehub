@@ -1,0 +1,3 @@
+ALTER TABLE people ADD COLUMN avatar_content_type VARCHAR(100);
+ALTER TABLE people ADD COLUMN avatar_version BIGINT NOT NULL DEFAULT 0;
+
