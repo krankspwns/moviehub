@@ -1,7 +1,7 @@
 <script lang="ts" module>
   export type IconName =
     | 'edit' | 'trash' | 'plus' | 'search' | 'film' | 'users' | 'compass'
-    | 'close' | 'prev' | 'next' | 'clock' | 'image' | 'bookmark';
+    | 'close' | 'prev' | 'next' | 'clock' | 'image' | 'bookmark' | 'sun' | 'moon';
 </script>
 
 <script lang="ts">
@@ -22,6 +22,8 @@
     clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
     image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21"/>',
     bookmark: '<path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>',
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+    moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
   };
 </script>
 

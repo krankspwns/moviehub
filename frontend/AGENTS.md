@@ -4,6 +4,7 @@
 |---|---|
 | `src/lib/api/catalog.ts` | ALL network code: typed GraphQL client (variables only, never string-interpolated input), error mapping, XHR artwork upload with progress |
 | `src/lib/components/` | `Icon`, `IconButton`, `Logo`, `MovieCard` (save/edit/delete icons), `PersonCard` (avatar, edit/delete), `MovieDetails` / `PersonDetails` (read-only popup opened by clicking a card title/overlay) |
+| `src/lib/state/theme.ts` | Light/dark theme (`data-theme` on `<html>`, colours are CSS variables in `style.css`; `index.html` applies the saved theme before first paint) |
 | `src/lib/state/saved.ts` | Saved-movies list persisted in localStorage (`readSaved`, `writeSaved`, `toggleSaved`) |
 | `src/lib/format.ts` | Pure helpers: `artworkSrc`, `roleLabel`, `initials`, `hue` |
 | `src/style.css` | Mobile-first responsive styles (breakpoints 640 / 1024 / 1440) |

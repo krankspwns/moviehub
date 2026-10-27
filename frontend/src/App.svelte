@@ -14,6 +14,7 @@
   import MovieDetails from './lib/components/MovieDetails.svelte';
   import PersonDetails from './lib/components/PersonDetails.svelte';
   import { readSaved, toggleSaved, writeSaved } from './lib/state/saved';
+  import { applyTheme, nextTheme, readTheme, writeTheme, type Theme } from './lib/state/theme';
 
   type Tab = 'movies' | 'people' | 'saved' | 'search';
   let tab: Tab = 'movies';
@@ -24,6 +25,8 @@
   let people: Page<Person> | null = null;
   let results: { movies: Movie[]; people: Person[] } | null = null;
   let savedIds: string[] = readSaved();
+  let theme: Theme = readTheme();
+  applyTheme(theme);
   let savedMovies: Movie[] | null = null;
   let loading = false;
   let busy = false;
@@ -62,6 +65,7 @@
     avatarPreview = next ? URL.createObjectURL(next) : '';
   }
   $: savedLabel = savedIds.length > 99 ? '99+' : String(savedIds.length);
+  function toggleTheme() { theme = nextTheme(theme); applyTheme(theme); writeTheme(theme); }
   function closeDetail() { viewMovie = null; viewPerson = null; }
   function onKey(event: KeyboardEvent) {
     if (event.key !== 'Escape') return;
@@ -222,6 +226,7 @@
       <button class:active={tab === 'saved'} aria-current={tab === 'saved' ? 'page' : undefined} onclick={() => switchTab('saved')}><span class="tab-icon" class:has-items={savedIds.length > 0}><Icon name="bookmark" size={26} />{#if savedIds.length}<b class="count" data-len={savedLabel.length} aria-label="{savedIds.length} saved">{savedLabel}</b>{/if}</span><span>Saved</span></button>
       <button class:active={tab === 'search'} aria-current={tab === 'search' ? 'page' : undefined} onclick={() => switchTab('search')}><Icon name="compass" size={18} /><span>Explore all</span></button>
     </nav>
+    <button type="button" class="theme-toggle" aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'} title={theme === 'dark' ? 'Light theme' : 'Dark theme'} onclick={toggleTheme}><Icon name={theme === 'dark' ? 'sun' : 'moon'} size={19} /></button>
   </div>
 </header>
 <main class="wrap">
