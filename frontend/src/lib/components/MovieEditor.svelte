@@ -179,7 +179,7 @@
             max="1000"
             aria-invalid={!!errors.runtimeMinutes}
             bind:value={form.runtimeMinutes}
-          /><FieldHint error={errors.runtimeMinutes} hint="0 = unknown" /></label
+          /><FieldHint error={errors.runtimeMinutes} hint="0 = not set" /></label
         >
       </div>
       <label

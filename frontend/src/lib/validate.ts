@@ -47,7 +47,7 @@ export function movieFieldErrors(movie: MovieInput, genres: string[], now = new 
   }
   const runtime = movie.runtimeMinutes;
   if (!Number.isInteger(runtime) || runtime < 0 || runtime > LIMITS.maxRuntime) {
-    errors.runtimeMinutes = `Runtime must be a whole number between 0 and ${LIMITS.maxRuntime} minutes (0 = unknown).`;
+    errors.runtimeMinutes = `Runtime must be a whole number between 0 and ${LIMITS.maxRuntime} minutes (0 = not set).`;
   }
   if (genres.length > LIMITS.maxGenres) errors.genres = `Use at most ${LIMITS.maxGenres} genres.`;
   else if (genres.some((g) => g.length > LIMITS.genreLength)) {

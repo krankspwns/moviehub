@@ -67,7 +67,7 @@ describe('details popup', () => {
     expect(screen.getByText('No synopsis yet.')).toBeInTheDocument();
     expect(screen.getByText('No creators credited.')).toBeInTheDocument();
     expect(screen.getByText('No cast credited.')).toBeInTheDocument();
-    expect(screen.getByText(/Runtime unknown/)).toBeInTheDocument();
+    expect(screen.getByText(/Runtime not set/)).toBeInTheDocument();
   });
 
   it('shows person details and filmography, including empty states', () => {

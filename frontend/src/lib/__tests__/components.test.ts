@@ -79,9 +79,9 @@ describe('MovieCard', () => {
     expect(screen.queryByRole('button', { name: /Save Arrival/ })).not.toBeInTheDocument();
   });
 
-  it('handles unknown runtime', () => {
+  it('handles unset runtime', () => {
     render(MovieCard, { movie: { ...movie, runtimeMinutes: 0 }, onedit: vi.fn(), ondelete: vi.fn() });
-    expect(screen.getByText(/Runtime unknown/)).toBeInTheDocument();
+    expect(screen.getByText(/Runtime not set/)).toBeInTheDocument();
   });
 });
 

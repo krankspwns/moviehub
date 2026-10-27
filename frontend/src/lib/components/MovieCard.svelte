@@ -64,7 +64,7 @@
         >{:else}{movie.title}{/if}
     </h3>
     <p class="meta">
-      {#if movie.runtimeMinutes}<Icon name="clock" size={13} /> {movie.runtimeMinutes} min{:else}Runtime unknown{/if}
+      {#if movie.runtimeMinutes}<Icon name="clock" size={13} /> {movie.runtimeMinutes} min{:else}Runtime not set{/if}
     </p>
     {#if movie.genres.length}
       <div class="chips">
