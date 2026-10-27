@@ -21,5 +21,9 @@ interface CatalogClient {
 
     /** Eagerly fetches the first chunk, so a missing artwork fails before any HTTP bytes are sent. */
     fun downloadArtwork(movieId: String): ArtworkDownload
+
+    fun uploadAvatar(personId: String, contentType: String, content: InputStream): ArtworkInfoDto
+
+    fun downloadAvatar(personId: String): ArtworkDownload
 }
 

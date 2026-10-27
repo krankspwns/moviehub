@@ -1,7 +1,9 @@
 package com.moviehub.gateway.catalog
 
 import com.google.protobuf.ByteString
+import com.moviehub.catalog.grpc.ArtworkChunk
 import com.moviehub.catalog.grpc.ArtworkInfo
+import com.moviehub.catalog.grpc.ArtworkKind
 import com.moviehub.catalog.grpc.ArtworkMetadata
 import com.moviehub.catalog.grpc.CatalogServiceGrpc.CatalogServiceBlockingStub
 import com.moviehub.catalog.grpc.CatalogServiceGrpc.CatalogServiceStub
@@ -99,7 +101,13 @@ class GrpcCatalogClient(
 
     // ---- artwork ----
 
-    override fun uploadArtwork(movieId: String, contentType: String, content: InputStream): ArtworkInfoDto {
+    override fun uploadArtwork(movieId: String, contentType: String, content: InputStream): ArtworkInfoDto =
+        upload(ArtworkKind.ARTWORK_KIND_MOVIE, movieId, contentType, content)
+
+    override fun uploadAvatar(personId: String, contentType: String, content: InputStream): ArtworkInfoDto =
+        upload(ArtworkKind.ARTWORK_KIND_PERSON, personId, contentType, content)
+
+    private fun upload(kind: ArtworkKind, ownerId: String, contentType: String, content: InputStream): ArtworkInfoDto {
         val result = CompletableFuture<ArtworkInfo>()
         val requests = async.uploadArtwork(object : StreamObserver<ArtworkInfo> {
             private var last: ArtworkInfo? = null
@@ -110,7 +118,7 @@ class GrpcCatalogClient(
         try {
             requests.onNext(
                 UploadArtworkRequest.newBuilder()
-                    .setMetadata(ArtworkMetadata.newBuilder().setMovieId(movieId).setContentType(contentType))
+                    .setMetadata(ArtworkMetadata.newBuilder().setMovieId(ownerId).setContentType(contentType).setKind(kind))
                     .build(),
             )
             val buffer = ByteArray(UPLOAD_CHUNK_SIZE)
@@ -131,12 +139,20 @@ class GrpcCatalogClient(
         } catch (e: TimeoutException) {
             throw CatalogException(FailureKind.UNAVAILABLE, "Artwork upload timed out", e)
         }
-        return ArtworkInfoDto(info.movieId, info.contentType, info.sizeBytes, artworkUrl(info.movieId, info.artworkVersion))
+        val url = if (kind == ArtworkKind.ARTWORK_KIND_PERSON) avatarUrl(info.movieId, info.artworkVersion) else artworkUrl(info.movieId, info.artworkVersion)
+        return ArtworkInfoDto(info.movieId, info.contentType, info.sizeBytes, url)
     }
 
     override fun downloadArtwork(movieId: String): ArtworkDownload = call {
-        val stream = blocking.withDeadlineAfter(properties.uploadTimeout.toMillis(), TimeUnit.MILLISECONDS)
-            .downloadArtwork(idOf(movieId))
+        download(movieId) { blocking.withDeadlineAfter(properties.uploadTimeout.toMillis(), TimeUnit.MILLISECONDS).downloadArtwork(idOf(movieId)) }
+    }
+
+    override fun downloadAvatar(personId: String): ArtworkDownload = call {
+        download(personId) { blocking.withDeadlineAfter(properties.uploadTimeout.toMillis(), TimeUnit.MILLISECONDS).downloadAvatar(idOf(personId)) }
+    }
+
+    private fun download(id: String, open: () -> Iterator<ArtworkChunk>): ArtworkDownload {
+        val stream = open()
         val first = stream.next() // throws NOT_FOUND here, before the caller commits any HTTP response
         val contentType = first.contentType
         val chunks = object : Iterator<ByteArray> {
@@ -144,7 +160,7 @@ class GrpcCatalogClient(
             override fun hasNext(): Boolean = pending != null || try {
                 stream.hasNext()
             } catch (e: StatusRuntimeException) {
-                log.warn("Artwork stream for {} failed mid-way: {}", movieId, e.status)
+                log.warn("Image stream for {} failed mid-way: {}", id, e.status)
                 throw e.toCatalogException()
             }
 
@@ -153,7 +169,7 @@ class GrpcCatalogClient(
                 return stream.next().data.toByteArray()
             }
         }
-        ArtworkDownload(contentType, chunks)
+        return ArtworkDownload(contentType, chunks)
     }
 
     // ---- mapping ----
@@ -194,6 +210,7 @@ class GrpcCatalogClient(
         bio = bio,
         birthDate = birthDate.ifEmpty { null },
         filmography = filmographyList.map { FilmographyEntryDto(it.movieId, it.title, it.role.toDomain()) },
+        avatarUrl = if (hasAvatar) avatarUrl(id, avatarVersion) else null,
     )
 
     private fun MovieInputDto.toProto(): MovieInput = MovieInput.newBuilder()

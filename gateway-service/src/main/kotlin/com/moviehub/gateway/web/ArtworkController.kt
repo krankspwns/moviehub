@@ -1,5 +1,6 @@
 package com.moviehub.gateway.web
 
+import com.moviehub.gateway.catalog.ArtworkDownload
 import com.moviehub.gateway.catalog.ArtworkInfoDto
 import com.moviehub.gateway.catalog.CatalogClient
 import org.springframework.http.CacheControl
@@ -32,8 +33,18 @@ class ArtworkController(private val catalog: CatalogClient) {
      * (a new upload yields a new version), so browsers may cache it for a year.
      */
     @GetMapping("/api/movies/{id}/artwork")
-    fun download(@PathVariable id: String, @RequestParam(required = false) v: Long?): ResponseEntity<StreamingResponseBody> {
-        val artwork = catalog.downloadArtwork(id)
+    fun download(@PathVariable id: String, @RequestParam(required = false) v: Long?): ResponseEntity<StreamingResponseBody> =
+        stream(catalog.downloadArtwork(id), v)
+
+    @PostMapping("/api/people/{id}/avatar", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    fun uploadAvatar(@PathVariable id: String, @RequestPart("file") file: MultipartFile): ArtworkInfoDto =
+        file.inputStream.use { catalog.uploadAvatar(id, file.contentType.orEmpty(), it) }
+
+    @GetMapping("/api/people/{id}/avatar")
+    fun downloadAvatar(@PathVariable id: String, @RequestParam(required = false) v: Long?): ResponseEntity<StreamingResponseBody> =
+        stream(catalog.downloadAvatar(id), v)
+
+    private fun stream(artwork: ArtworkDownload, v: Long?): ResponseEntity<StreamingResponseBody> {
         val cache = if (v != null) CacheControl.maxAge(Duration.ofDays(365)).cachePublic().immutable() else CacheControl.noCache()
         return ResponseEntity.ok()
             .contentType(MediaType.parseMediaType(artwork.contentType))

@@ -32,6 +32,7 @@ data class PersonDto(
     val bio: String,
     val birthDate: String?,
     val filmography: List<FilmographyEntryDto>,
+    val avatarUrl: String? = null,
 )
 
 data class PageDto<T>(val items: List<T>, val total: Int, val page: Int, val pageSize: Int) {
@@ -65,3 +66,4 @@ class CatalogException(val kind: FailureKind, message: String, cause: Throwable?
 
 fun artworkUrl(movieId: String, version: Long) = "/api/movies/$movieId/artwork?v=$version"
 
+fun avatarUrl(personId: String, version: Long) = "/api/people/$personId/avatar?v=$version"

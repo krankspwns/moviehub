@@ -55,6 +55,9 @@ open class FakeCatalogClient : CatalogClient {
     override fun uploadArtwork(movieId: String, contentType: String, content: java.io.InputStream) =
         ArtworkInfoDto(movieId, contentType, content.readAllBytes().size.toLong(), "/api/movies/$movieId/artwork?v=1")
     override fun downloadArtwork(movieId: String) = ArtworkDownload("image/png", listOf(byteArrayOf(1, 2, 3)).iterator())
+    override fun uploadAvatar(personId: String, contentType: String, content: java.io.InputStream) =
+        ArtworkInfoDto(personId, contentType, content.readAllBytes().size.toLong(), "/api/people/$personId/avatar?v=1")
+    override fun downloadAvatar(personId: String) = ArtworkDownload("image/png", listOf(byteArrayOf(4, 5, 6)).iterator())
 }
 
 fun notFound(message: String = "not found") = CatalogException(FailureKind.NOT_FOUND, message)

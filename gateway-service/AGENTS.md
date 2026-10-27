@@ -6,7 +6,7 @@ Package root: `src/main/kotlin/com/moviehub/gateway/`
 |---|---|
 | `src/main/resources/graphql/schema.graphqls` | GraphQL contract the frontend depends on |
 | `graphql/CatalogGraphQlController.kt` | Pure delegation to `CatalogClient`; `CatalogExceptionResolver` maps failures to GraphQL errors with `extensions.code` (`INVALID`, `NOT_FOUND`, `UNAVAILABLE`, `INTERNAL`) |
-| `web/ArtworkController.kt` | REST upload/download of artwork (streams to catalog via gRPC) |
+| `web/ArtworkController.kt` | REST upload/download of movie artwork (`/api/movies/{id}/artwork`) and person avatars (`/api/people/{id}/avatar`), streamed to catalog via gRPC |
 | `web/WebConfig.kt` | RFC 7807 errors for REST, CORS (`moviehub.cors.allowed-origins`) |
 | `catalog/` | `CatalogClient` interface, `GrpcCatalogClient`, DTOs in `Models.kt`, channel config |
 

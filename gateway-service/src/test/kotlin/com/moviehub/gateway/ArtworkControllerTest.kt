@@ -75,6 +75,25 @@ class ArtworkControllerTest {
     }
 
     @Test
+    fun `avatar upload and download use the people endpoints`() {
+        whenever(catalog.uploadAvatar(any(), any(), any())).thenAnswer {
+            com.moviehub.gateway.catalog.ArtworkInfoDto(it.getArgument(0), it.getArgument(1), 4, "/api/people/p1/avatar?v=1")
+        }
+        mvc.perform(multipart("/api/people/p1/avatar").file(png))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.artworkUrl").value("/api/people/p1/avatar?v=1"))
+
+        whenever(catalog.downloadAvatar("p1")).thenReturn(
+            com.moviehub.gateway.catalog.ArtworkDownload("image/png", listOf(byteArrayOf(9)).iterator()),
+        )
+        val started = mvc.perform(get("/api/people/p1/avatar").param("v", "1")).andReturn()
+        mvc.perform(asyncDispatch(started)).andExpect(status().isOk).andExpect(content().bytes(byteArrayOf(9)))
+
+        whenever(catalog.downloadAvatar("none")).thenThrow(notFound())
+        mvc.perform(get("/api/people/none/avatar")).andExpect(status().isNotFound)
+    }
+
+    @Test
     fun `unversioned download must revalidate and missing artwork is 404`() {
         whenever(catalog.downloadArtwork("m1")).thenReturn(
             com.moviehub.gateway.catalog.ArtworkDownload("image/png", listOf(byteArrayOf(1)).iterator()),

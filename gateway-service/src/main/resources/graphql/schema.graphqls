@@ -37,6 +37,8 @@ type Person {
     "ISO-8601 date (yyyy-MM-dd) or null."
     birthDate: String
     filmography: [FilmographyEntry!]!
+    "Relative URL of the avatar image, or null when none has been uploaded. Includes a cache-busting version."
+    avatarUrl: String
 }
 
 type FilmographyEntry {
