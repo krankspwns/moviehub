@@ -55,6 +55,27 @@ describe('MovieEditor', () => {
     expect(onsaved).not.toHaveBeenCalled();
   });
 
+  it('shows the limit message and a live counter while typing, without blocking input', async () => {
+    mockFetch.mockResolvedValue(reply(peoplePage));
+    render(MovieEditor, { movie: null, onsaved: vi.fn(), onclose: vi.fn() });
+    const title = screen.getByLabelText(/Title/);
+    await fireEvent.input(title, { target: { value: 'x'.repeat(200) } });
+    expect(screen.getByText('200/200')).toBeInTheDocument();
+    expect(screen.queryByText('Title must be at most 200 characters.')).not.toBeInTheDocument();
+    await fireEvent.input(title, { target: { value: 'x'.repeat(201) } });
+    expect(screen.getByText('Title must be at most 200 characters.')).toBeInTheDocument();
+    expect(screen.getByText(/201\/200/)).toBeInTheDocument();
+    expect(title).toHaveAttribute('aria-invalid', 'true');
+  });
+
+  it('shows an inline message for an invalid image as soon as it is chosen', async () => {
+    mockFetch.mockResolvedValue(reply(peoplePage));
+    render(MovieEditor, { movie: null, onsaved: vi.fn(), onclose: vi.fn() });
+    const gif = new File(['x'], 'a.gif', { type: 'image/gif' });
+    await fireEvent.change(screen.getByLabelText(/Upload image/), { target: { files: [gif] } });
+    expect(screen.getByText(/JPEG, PNG or WebP file smaller than 5 MB/)).toBeInTheDocument();
+  });
+
   it('closes on Escape and the close button', async () => {
     mockFetch.mockResolvedValue(reply(peoplePage));
     const onclose = vi.fn();

@@ -12,7 +12,8 @@
     type Person,
   } from '../api/catalog';
   import { artworkSrc, errorMessage } from '../format';
-  import { parseGenres, validateMovie } from '../validate';
+  import { LIMITS, movieFieldErrors, parseGenres, validateMovie } from '../validate';
+  import FieldHint from './FieldHint.svelte';
   import Icon from './Icon.svelte';
 
   let { movie, onsaved, onclose }: { movie: Movie | null; onsaved: () => void; onclose: () => void } = $props();
@@ -43,7 +44,10 @@
       : blank(),
   );
   let genreText = $state(initial?.genres.join(', ') ?? '');
+  const genreList = $derived(parseGenres(genreText));
+  const errors = $derived(movieFieldErrors(form, genreList));
   let file = $state<File | null>(null);
+  const imageError = $derived(imageProblem(file));
   let uploadPercent = $state<number | null>(null);
   let busy = $state(false);
   let error = $state('');
@@ -97,7 +101,7 @@
 
   async function submit() {
     error = '';
-    const genres = parseGenres(genreText);
+    const genres = genreList;
     const problem = validateMovie(form, genres) ?? imageProblem(file);
     if (problem) {
       error = problem;
@@ -144,12 +148,19 @@
     </div>
     {#if error}<p class="alert failure" role="alert">{error}</p>{/if}
     <form
+      novalidate
       onsubmit={(event) => {
         event.preventDefault();
         void submit();
       }}
     >
-      <label>Title <input required maxlength="200" bind:value={form.title} /></label>
+      <label
+        >Title <input required aria-invalid={!!errors.title} bind:value={form.title} /><FieldHint
+          error={errors.title}
+          value={form.title}
+          max={LIMITS.title}
+        /></label
+      >
       <div class="two-col">
         <label
           >Release year <input
@@ -157,15 +168,32 @@
             type="number"
             min="1888"
             max={new Date().getFullYear() + 10}
+            aria-invalid={!!errors.releaseYear}
             bind:value={form.releaseYear}
-          /></label
+          /><FieldHint error={errors.releaseYear} /></label
         >
-        <label>Runtime (minutes) <input type="number" min="0" max="1000" bind:value={form.runtimeMinutes} /></label>
+        <label
+          >Runtime (minutes) <input
+            type="number"
+            min="0"
+            max="1000"
+            aria-invalid={!!errors.runtimeMinutes}
+            bind:value={form.runtimeMinutes}
+          /><FieldHint error={errors.runtimeMinutes} /></label
+        >
       </div>
-      <label>Synopsis <textarea maxlength="4000" rows="3" bind:value={form.synopsis}></textarea></label>
       <label
-        >Genres <input placeholder="Drama, Adventure" bind:value={genreText} /><small>Separate genres with commas</small
-        ></label
+        >Synopsis <textarea rows="3" aria-invalid={!!errors.synopsis} bind:value={form.synopsis}></textarea><FieldHint
+          error={errors.synopsis}
+          value={form.synopsis}
+          max={LIMITS.synopsis}
+        /></label
+      >
+      <label
+        >Genres <input placeholder="Drama, Adventure" aria-invalid={!!errors.genres} bind:value={genreText} /><FieldHint
+          error={errors.genres}
+          hint="Separate genres with commas ({genreList.length}/{LIMITS.maxGenres})"
+        /></label
       >
       <div class="form-section">
         <div class="form-section-title">
@@ -196,7 +224,6 @@
                 <input
                   aria-label="Character name"
                   placeholder="Character (optional)"
-                  maxlength="200"
                   bind:value={credit.characterName}
                 />
               {/if}
@@ -205,6 +232,7 @@
               >
             </div>
           {/each}
+          {#if errors.credits}<small class="field-error" aria-live="polite">{errors.credits}</small>{/if}
           {#if pickerHasMore}<button
               type="button"
               disabled={pickerBusy}
@@ -230,7 +258,7 @@
             accept="image/jpeg,image/png,image/webp"
             onchange={(event) => (file = event.currentTarget.files?.[0] ?? null)}
           />
-          <small>JPEG, PNG or WebP · maximum 5 MB</small>
+          <FieldHint error={imageError ?? undefined} hint="JPEG, PNG or WebP · maximum 5 MB" />
         </label>
         {#if uploadPercent !== null}<div role="status">
             Uploading artwork: {uploadPercent}% <progress value={uploadPercent} max="100"></progress>

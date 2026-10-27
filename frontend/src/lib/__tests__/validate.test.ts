@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseGenres, validateMovie, validatePerson } from '../validate';
+import { movieFieldErrors, parseGenres, personFieldErrors, validateMovie, validatePerson } from '../validate';
 import type { MovieInput } from '../api/catalog';
 
 const now = new Date('2026-06-01T00:00:00');
@@ -68,5 +68,24 @@ describe('parseGenres', () => {
   it('trims, drops blanks and de-duplicates case-insensitively', () => {
     expect(parseGenres(' Drama, ,drama,Crime ,')).toEqual(['Drama', 'Crime']);
     expect(parseGenres('')).toEqual([]);
+  });
+});
+
+describe('field errors (shown while typing)', () => {
+  it('reports each problem against its own field and ignores empty required fields', () => {
+    expect(movieFieldErrors(movie({ title: '' }), [], now)).toEqual({});
+    const errors = movieFieldErrors(
+      movie({ title: 'x'.repeat(201), synopsis: 'y'.repeat(4001), releaseYear: 1800 }),
+      [],
+      now,
+    );
+    expect(Object.keys(errors).sort()).toEqual(['releaseYear', 'synopsis', 'title']);
+    expect(errors.title).toBe('Title must be at most 200 characters.');
+  });
+  it('reports person problems per field', () => {
+    expect(personFieldErrors({ name: 'x'.repeat(201), bio: '', birthDate: '2999-01-01' }, now)).toEqual({
+      name: 'Name must be at most 200 characters.',
+      birthDate: 'Birth date cannot be in the future.',
+    });
   });
 });

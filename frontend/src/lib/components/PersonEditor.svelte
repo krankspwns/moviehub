@@ -2,7 +2,8 @@
   import { untrack } from 'svelte';
   import { imageProblem, savePerson, uploadAvatar, type Person, type PersonInput } from '../api/catalog';
   import { artworkSrc, errorMessage, hue, initials } from '../format';
-  import { validatePerson } from '../validate';
+  import { LIMITS, personFieldErrors, validatePerson } from '../validate';
+  import FieldHint from './FieldHint.svelte';
   import Icon from './Icon.svelte';
 
   let { person, onsaved, onclose }: { person: Person | null; onsaved: () => void; onclose: () => void } = $props();
@@ -14,7 +15,9 @@
       ? { name: initial.name, bio: initial.bio, birthDate: initial.birthDate ?? '' }
       : { name: '', bio: '', birthDate: '' },
   );
+  const errors = $derived(personFieldErrors(form));
   let avatarFile = $state<File | null>(null);
+  const imageError = $derived(imageProblem(avatarFile));
   let avatarPreview = $state('');
   let uploadPercent = $state<number | null>(null);
   let busy = $state(false);
@@ -76,6 +79,7 @@
     </div>
     {#if error}<p class="alert failure" role="alert">{error}</p>{/if}
     <form
+      novalidate
       onsubmit={(event) => {
         event.preventDefault();
         void submit();
@@ -94,17 +98,34 @@
             accept="image/jpeg,image/png,image/webp"
             onchange={(event) => pickAvatar(event.currentTarget.files?.[0] ?? null)}
           />
-          <small>JPEG, PNG or WebP · maximum 5 MB</small>
+          <FieldHint error={imageError ?? undefined} hint="JPEG, PNG or WebP · maximum 5 MB" />
         </label>
       </div>
       {#if uploadPercent !== null}<div role="status">
           Uploading photo: {uploadPercent}% <progress value={uploadPercent} max="100"></progress>
         </div>{/if}
-      <label>Name <input required maxlength="200" bind:value={form.name} /></label>
       <label
-        >Birth date <input type="date" max={new Date().toISOString().slice(0, 10)} bind:value={form.birthDate} /></label
+        >Name <input required aria-invalid={!!errors.name} bind:value={form.name} /><FieldHint
+          error={errors.name}
+          value={form.name}
+          max={LIMITS.name}
+        /></label
       >
-      <label>Biography <textarea maxlength="4000" rows="5" bind:value={form.bio}></textarea></label>
+      <label
+        >Birth date <input
+          type="date"
+          max={new Date().toISOString().slice(0, 10)}
+          aria-invalid={!!errors.birthDate}
+          bind:value={form.birthDate}
+        /><FieldHint error={errors.birthDate} /></label
+      >
+      <label
+        >Biography <textarea rows="5" aria-invalid={!!errors.bio} bind:value={form.bio}></textarea><FieldHint
+          error={errors.bio}
+          value={form.bio}
+          max={LIMITS.bio}
+        /></label
+      >
       <div class="dialog-actions">
         <button type="button" disabled={busy} onclick={close}>Cancel</button>
         <button class="primary" type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save person'}</button>

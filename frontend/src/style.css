@@ -1365,3 +1365,38 @@ progress {
 :root[data-theme='light'] .icon-btn.active:hover:not(:disabled) {
   color: #2a1d00;
 }
+
+/* ---------- Inline field validation ---------- */
+.field-meta {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 1.1em;
+}
+.dialog .field-error {
+  color: var(--danger);
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+.dialog .counter {
+  margin-left: auto;
+  flex: none;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.dialog .counter.over {
+  color: var(--danger);
+  font-weight: 700;
+}
+input[aria-invalid='true'],
+textarea[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+.credit-editor ~ .field-error {
+  display: block;
+  margin: 4px 0 10px;
+  color: var(--danger);
+  font-weight: 600;
+  font-size: 0.8rem;
+}
