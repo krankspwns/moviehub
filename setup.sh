@@ -169,9 +169,22 @@ cmd_start() {
   cmd_check >/dev/null || die "Prerequisites missing. Run ./setup.sh first."
   [ -d "$ROOT/frontend/node_modules" ] || die "Dependencies not installed. Run ./setup.sh first."
   local p
-  for p in 9090 8080 5173; do
-    port_open "$p" && die "Port $p is already in use. Stop the other process (or run ./setup.sh stop)."
-  done
+  local busy=0
+  for p in 9090 8080 5173; do port_open "$p" && busy=1; done
+  if [ "$busy" -eq 1 ]; then
+    info "MovieHub already running; stopping it first"
+    cmd_stop
+    local i
+    for i in 1 2 3 4 5 6 7 8 9 10; do
+      busy=0
+      for p in 9090 8080 5173; do port_open "$p" && busy=1; done
+      [ "$busy" -eq 0 ] && break
+      sleep 1
+    done
+    for p in 9090 8080 5173; do
+      port_open "$p" && die "Port $p is still in use by another process (not started by this script). Free it and retry."
+    done
+  fi
   export JAVA_HOME; JAVA_HOME="$(find_java_home)"
   mkdir -p "$RUN_DIR"
   trap 'echo; bold "Shutting down"; cmd_stop; exit 0' INT TERM
@@ -223,5 +236,6 @@ case "${COMMAND:-setup}" in
   test)    cmd_test ;;
   setup)   cmd_install && cmd_start ;;
 esac
+
 
 
