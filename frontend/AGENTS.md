@@ -3,19 +3,19 @@
 | Path                     | Responsibility                                                                                                                                                                                     |
 | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/lib/api/catalog.ts` | ALL network code: typed GraphQL client (variables only, never string-interpolated input), error mapping, XHR artwork upload with progress                                                          |
-| `src/lib/components/`    | `Icon`, `IconButton`, `Logo`, `MovieCard` (save/edit/delete icons), `PersonCard` (avatar, edit/delete), `MovieDetails` / `PersonDetails` (read-only popup opened by clicking a card title/overlay) |
+| `src/lib/components/`    | `Icon`, `IconButton`, `Logo`, `Header`, `MovieCard` (poster with overlaid title/year/runtime, save/edit/delete), `PersonCard` (avatar, save/edit/delete), `MovieDetails` / `PersonDetails` (read-only popup opened by clicking a card), `MovieEditor` / `PersonEditor`, `PersonPicker` (type-to-search combobox for credits), `ConfirmDialog` (delete confirmation), `Toast` (auto-dismissing result message), `FieldHint` / `CharCount` (inline validation text and counters), `SearchResults` |
 | `src/lib/state/theme.ts` | Light/dark theme (`data-theme` on `<html>`, colours are CSS variables in `style.css`; `index.html` applies the saved theme before first paint)                                                     |
-| `src/lib/state/saved.ts` | Saved-movies list persisted in localStorage (`readSaved`, `writeSaved`, `toggleSaved`)                                                                                                             |
-| `src/lib/format.ts`      | Pure helpers: `artworkSrc`, `roleLabel`, `initials`, `hue`                                                                                                                                         |
+| `src/lib/state/saved.ts` | Saved movies and saved people (separate localStorage keys): `readSaved`/`writeSaved`, `readSavedPeople`/`writeSavedPeople`, `toggleSaved`                                                          |
+| `src/lib/validate.ts`    | Form rules mirroring the backend (`LIMITS`, `movieFieldErrors`, `personFieldErrors`, `validateMovie`, `validatePerson`). The backend stays the source of truth                                    |
+| `src/lib/format.ts`      | Pure helpers: `artworkSrc`, `roleLabel`, `initials`, `hue`, `errorMessage`, `blockEnterSubmit` (stops Enter in a text field from saving the form)                                                  |
 | `src/style.css`          | Mobile-first responsive styles (breakpoints 640 / 1024 / 1440)                                                                                                                                     |
 | `src/App.svelte`         | Current UI (tabs, lists, search, dialogs). Large; when adding substantial UI, extract components into `src/lib/components/` and shared state into `src/lib/state/` instead of growing this file    |
-| `src/style.css`          | Global responsive styles                                                                                                                                                                           |
-| `src/lib/__tests__/`     | Vitest + Testing Library (`catalog.test.ts` API, `App.test.ts` UI). Setup: `src/test-setup.ts`                                                                                                     |
+| `src/lib/__tests__/`     | Vitest + Testing Library (`catalog.test.ts` API, `App.test.ts` UI, `editors.test.ts`, `person-picker.test.ts`, `delete-flow.test.ts`, `details.test.ts`, `validate.test.ts`, `saved.test.ts`). Setup: `src/test-setup.ts`                                                                                                     |
 | `vite.config.ts`         | Dev proxy `/graphql` and `/api` → `:8080`; test config (`resolve.conditions: ['browser']` is required for component tests)                                                                         |
 
 Rules
 
-- UI must show loading, empty, success and error states, and upload progress. Guard against stale responses (see `requestId` in `App.svelte`).
+- UI must show loading, empty, success and error states, and upload progress. Guard against stale responses (see `requestId` in `App.svelte`). Deletes go through `ConfirmDialog` (never `window.confirm`) and results are shown with `Toast`. Do not set `maxlength` on inputs: show the inline message instead so users see why.
 - Keep types in `catalog.ts` in sync with `gateway-service/.../schema.graphqls`.
 - Match the existing Svelte style (`onclick=` attributes, `bind:`); do not mix in new patterns without migrating.
 - `typescript` stays at `~5.9` (svelte-check compatibility).

@@ -1,25 +1,4 @@
-# MovieHub
-
-A responsive film catalog for managing movies, artwork, cast, and creators. Built for the included [technical assessment](docs/Technical-Assessment.pdf).
-
-## Architecture
-
-```text
-Browser (Svelte 5 / TypeScript, Vite :5173)
-    │ GraphQL /graphql (queries and mutations)
-    │ HTTP multipart /api/movies/{id}/artwork and /api/people/{id}/avatar (binary upload with progress)
-    ▼
-Gateway (Spring Boot / Kotlin :8080)
-    │ gRPC (including client-streamed artwork uploads)
-    ▼
-Catalog (Spring Boot / Kotlin, gRPC :9090)
-    ├── H2 file database (Flyway migrations)
-    └── Local artwork files
-```
-
-GraphQL is used for all structured frontend/backend data. Artwork uses a small HTTP endpoint because GraphQL does not natively transport binary files and `XMLHttpRequest` provides upload progress. The gateway communicates with the catalog **only by gRPC**. Images are served through the gateway at the relative URL returned by the movie query. No external API keys or services are required.
-
-Features: paginated movie and person lists; movie/person create, update and delete; credits with actor/creator roles and filmography; searches across movies and people; genre and role filtering; artwork upload with progress and cache-busted display; avatar photos for cast and creators; click-through detail popups for movies (creators, cast and characters) and people (bio, filmography); a **Saved** list (bookmark movies, stored in the browser's localStorage, so it is per browser and not shared); a violet/pink theme with a light/dark toggle (follows the OS by default, remembered per browser) and a custom favicon; loading, empty, success and error states.
+, stored in the browser's localStorage, so it is per browser and not shared); a violet/pink theme with a light/dark toggle (follows the OS by default, remembered per browser) and a custom favicon; loading, empty, success and error states.
 
 New to the codebase? Start with the [project tour](docs/PROJECT-TOUR.md): a 10-minute walkthrough of what each folder and file does and how one request flows through the system.
 
@@ -40,7 +19,7 @@ Checks for JDK 21, Node.js 22+ and curl, offers to install anything missing (Hom
 ## Run manually
 
 From the repository root, use **three terminals**:
-
+Features: paginated movie and person lists; movie/person create, update and delete; credits with actor/creator roles and filmography; searches across movies and people; genre and role filtering; artwork upload with progress and cache-busted display; avatar photos for cast and creators; click-through detail popups for movies (creators, cast and characters) and people (bio, filmography); a **Saved** list (bookmark movies and cast/creators; stored in the browser's localStorage, so it is per browser and not shared); inline form validation with live character counters (the catalog service still enforces every rule); a type-to-search person picker for movie credits; a confirmation dialog before deleting and toast notifications for results; a violet/pink theme with a light/dark toggle (follows the OS by default, remembered per browser) and a custom favicon; loading, empty, success and error states.
 ```sh
 # Terminal 1: gRPC catalog (creates catalog-service/data automatically)
 ./gradlew :catalog-service:bootRun
@@ -71,7 +50,7 @@ npm test
 npm run build
 ```
 
-Backend tests exercise service validation, paging/search, artwork, gRPC and gateway GraphQL/HTTP behavior. Frontend tests exercise GraphQL requests and failures, upload progress, empty states and creation/search flows. No running services are required to run tests.
+Backend tests exercise service validation, paging/search, artwork, gRPC and gateway GraphQL/HTTP behavior. Frontend tests exercise GraphQL requests and failures, upload progress, empty states, creation/search flows, inline validation, the delete confirmation and toast, the person picker, saved lists and the detail popups. No running services are required to run tests.
 
 ## AI tool use
 
@@ -92,4 +71,4 @@ This is a local assessment application: there is no authentication or production
 
 
 
-
+**How the output was checked:** backend tests (`./gradlew ktlintCheck test`), frontend checks (`cd frontend && npm run verify`), and end-to-end smoke tests against the running stack (create, search, image upload and download). Tool-generated code was refactored where it fell short (for example splitting a large component and enforcing lint/format rules). The AI tooling cannot render the UI, so layout and visual details (cards, popups, light/dark theme, responsive behaviour) were reviewed and iterated on by the author in a real browser, and several bugs found that way (for example the editor opening blank from a popup, and Enter submitting a form from a search field) were fixed with regression tests.

@@ -37,7 +37,7 @@ Why two services? The assessment asks for it, and it gives a clean split: the br
 ```
 
 ### Svelte frontend in TypeScript (`frontend/`)
-- **Purpose:** everything the user sees: lists, search, forms, popups, saved list, light/dark theme.
+- **Purpose:** everything the user sees: lists, search, forms, popups, saved movies and people, light/dark theme.
 - **How:** Svelte 5 (with "runes": `$state`, `$derived`, `$props`) built by Vite. All code is TypeScript in strict mode (`tsconfig.json`), checked by `svelte-check`; the server's data shapes are declared once as TypeScript types in `src/lib/api/catalog.ts` (`Movie`, `Person`, `Credit`, ...), so a wrong field name fails at build time.
 - **Shape:** `App.svelte` orchestrates; `lib/components/` holds the pieces; `lib/api/` is the only place that talks to the server; `lib/state/` and `lib/validate.ts` are plain TypeScript with unit tests (Vitest).
 - **Dev wiring:** Vite proxies `/graphql` and `/api` to the gateway (`vite.config.ts`), so the browser only ever talks to one origin.
@@ -109,13 +109,13 @@ The browser uses `XMLHttpRequest` so it can show upload progress (`uploadImage()
 |------|--------------|
 | `src/App.svelte` | The main screen's orchestration: which tab is shown, loading/search/paging, delete, saved list and theme, and which dialog is open. Start here. |
 | `src/lib/api/catalog.ts` | Every server call (GraphQL queries/mutations, image upload) + TypeScript types. |
-| `src/lib/validate.ts` | Form rules that mirror the backend, for instant messages. |
-| `src/lib/format.ts` | Small pure helpers (initials, colour hue, role labels). |
-| `src/lib/state/saved.ts` | "Saved" movies, kept in the browser's localStorage. |
+| `src/lib/validate.ts` | Form rules that mirror the backend, so messages such as "Title must be at most 200 characters." appear while typing. The backend still enforces everything. |
+| `src/lib/format.ts` | Small pure helpers (initials, colour hue, role labels, error text, and `blockEnterSubmit`, which stops Enter in a text field from saving a form by accident). |
+| `src/lib/state/saved.ts` | "Saved" movies and people, kept in the browser's localStorage (one key each, so per browser, not shared). |
 | `src/lib/state/theme.ts` | Light/dark theme choice. |
-| `src/lib/components/` | `Header` (tabs, theme toggle), `MovieCard` / `PersonCard`, `MovieDetails` / `PersonDetails` (read-only popups), `MovieEditor` / `PersonEditor` (forms with their own validation and uploads), `SearchResults`, `Icon`, `IconButton`, `Logo`. |
+| `src/lib/components/` | `Header` (tabs, theme toggle), `MovieCard` / `PersonCard` (the movie card shows the title, year, runtime and one genre over the poster), `MovieDetails` / `PersonDetails` (read-only popups), `MovieEditor` / `PersonEditor` (forms with their own validation and uploads), `PersonPicker` (type-to-search field used for each movie credit), `ConfirmDialog` (asks before deleting), `Toast` (success message that dismisses itself), `FieldHint` / `CharCount` (inline messages and character counters), `SearchResults`, `Icon`, `IconButton`, `Logo`. |
 | `src/style.css` | All styling. Colours are CSS variables at the top; the light theme overrides them. Mobile-first with breakpoints at 640 / 1024 / 1440 px. |
-| `src/lib/__tests__/` | Vitest tests (API client, components, editors, validation, saved list, theme). |
+| `src/lib/__tests__/` | Vitest tests (API client, components, editors, person picker, delete flow, validation, saved lists, theme). |
 
 ## 6. Backend map
 
