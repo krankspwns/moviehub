@@ -154,6 +154,33 @@ kill_tree() {
   kill "$pid" 2>/dev/null || true
 }
 
+# PIDs listening on a TCP port (empty when unknown or lsof is unavailable).
+port_pids() {
+  command -v lsof >/dev/null 2>&1 || return 0
+  lsof -nP -tiTCP:"$1" -sTCP:LISTEN 2>/dev/null || true
+}
+
+describe_port_owner() {
+  local pid
+  pid="$(port_pids "$1" | head -n 1)"
+  [ -n "$pid" ] || { echo "unknown process"; return; }
+  echo "pid $pid, $(ps -o command= -p "$pid" 2>/dev/null | cut -c1-120)"
+}
+
+# Stops leftover MovieHub processes that have no pid file (e.g. started from another terminal or an older run).
+# Only processes whose command line mentions "moviehub" are touched; anything else is left alone.
+stop_orphans() {
+  local p pid cmd
+  for p in 9090 8080 5173; do
+    for pid in $(port_pids "$p"); do
+      cmd="$(ps -o command= -p "$pid" 2>/dev/null || true)"
+      case "$(printf '%s' "$cmd" | tr '[:upper:]' '[:lower:]')" in
+        *moviehub*) info "Stopping leftover MovieHub process $pid on port $p"; kill_tree "$pid" ;;
+      esac
+    done
+  done
+}
+
 cmd_stop() {
   [ -d "$RUN_DIR" ] || { info "Nothing to stop."; return 0; }
   local file
@@ -172,8 +199,9 @@ cmd_start() {
   local busy=0
   for p in 9090 8080 5173; do port_open "$p" && busy=1; done
   if [ "$busy" -eq 1 ]; then
-    info "MovieHub already running; stopping it first"
+    info "Something is already listening on a MovieHub port; stopping MovieHub first"
     cmd_stop
+    stop_orphans
     local i
     for i in 1 2 3 4 5 6 7 8 9 10; do
       busy=0
@@ -182,7 +210,9 @@ cmd_start() {
       sleep 1
     done
     for p in 9090 8080 5173; do
-      port_open "$p" && die "Port $p is still in use by another process (not started by this script). Free it and retry."
+      if port_open "$p"; then
+        die "Port $p is in use by another program: $(describe_port_owner "$p"). Stop it and retry."
+      fi
     done
   fi
   export JAVA_HOME; JAVA_HOME="$(find_java_home)"
