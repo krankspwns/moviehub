@@ -59,6 +59,7 @@
   let pickerHasMore = $state(false);
   let pickerBusy = $state(false);
   let pickerRequestId = 0;
+  let pickerTimer: ReturnType<typeof setTimeout>;
   const knownPeople = $state<Record<string, string>>({});
   for (const credit of initial?.credits ?? []) knownPeople[credit.personId] = credit.personName;
 
@@ -84,7 +85,13 @@
   }
   onMount(() => {
     void loadPicker(true);
+    return () => clearTimeout(pickerTimer);
   });
+  // Debounced, and read after bind:value has updated pickerQuery (reading it inside the input event can be one key behind).
+  function searchPeople() {
+    clearTimeout(pickerTimer);
+    pickerTimer = setTimeout(() => void loadPicker(true), 250);
+  }
 
   function addCredit() {
     form.credits = [...form.credits, { personId: '', role: 'ACTOR', characterName: '' }];
@@ -202,11 +209,16 @@
         </div>
         {#if form.credits.length}
           <label
-            >Find a person <input
-              placeholder="Filter available people…"
+            >Search people <input
+              type="search"
+              placeholder="Type a name to narrow the Person lists below…"
               bind:value={pickerQuery}
-              oninput={() => void loadPicker(true)}
-            /></label
+              oninput={searchPeople}
+            />
+            <small aria-live="polite">
+              {#if pickerBusy}Searching…{:else if pickerQuery.trim()}{pickerPeople.length}{pickerHasMore ? '+' : ''}
+                {pickerPeople.length === 1 ? 'person matches' : 'people match'} “{pickerQuery.trim()}”{/if}
+            </small></label
           >
           {#each form.credits as credit, index (credit)}
             <div class="credit-editor">
@@ -241,7 +253,11 @@
                 void loadPicker();
               }}>Load more people</button
             >{/if}
-          {#if !pickerPeople.length}<p class="hint">No people found. Add them in Cast & creators first.</p>{/if}
+          {#if !pickerPeople.length && !pickerBusy}<p class="hint">
+              {pickerQuery.trim()
+                ? 'No one matches that search. Clear it, or add the person in Cast & creators first.'
+                : 'No people yet. Add them in Cast & creators first.'}
+            </p>{/if}
         {/if}
       </div>
       <div class="form-section">
