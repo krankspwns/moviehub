@@ -23,8 +23,6 @@
   } = $props();
 
   let imageFailed = $state(false);
-  const directors = $derived(movie.credits.filter((c) => c.role === 'DIRECTOR').map((c) => c.personName));
-  const cast = $derived(movie.credits.filter((c) => c.role === 'ACTOR').map((c) => c.personName));
 </script>
 
 <article class="card movie-card">
@@ -42,7 +40,6 @@
         <span>{initials(movie.title)}</span>
       </div>
     {/if}
-    <span class="badge">{movie.releaseYear}</span>
     {#if ontoggle}
       <div class="save-action" class:is-saved={saved}>
         <IconButton
@@ -64,21 +61,13 @@
         >{:else}{movie.title}{/if}
     </h3>
     <p class="meta">
-      {#if movie.runtimeMinutes}<Icon name="clock" size={13} /> {movie.runtimeMinutes} min{:else}Runtime Not Set{/if}
+      {movie.releaseYear} · {#if movie.runtimeMinutes}{movie.runtimeMinutes} min{:else}Runtime Not Set{/if}
     </p>
     {#if movie.genres.length}
       <div class="chips">
-        {#each movie.genres.slice(0, 3) as genre (genre)}<span class="chip">{genre}</span>{/each}
+        <span class="chip">{movie.genres[0]}</span>
+        {#if movie.genres.length > 1}<span class="chip more">+{movie.genres.length - 1}</span>{/if}
       </div>
-    {/if}
-    {#if movie.synopsis}<p class="synopsis">{movie.synopsis}</p>{/if}
-    {#if directors.length || cast.length}
-      <p class="credit-line">
-        {#if directors.length}<span><b>Dir.</b> {directors.join(', ')}</span>{/if}
-        {#if cast.length}<span
-            ><b>Cast</b> {cast.slice(0, 3).join(', ')}{cast.length > 3 ? ` +${cast.length - 3}` : ''}</span
-          >{/if}
-      </p>
     {/if}
   </div>
 </article>

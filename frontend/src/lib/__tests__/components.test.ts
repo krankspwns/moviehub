@@ -46,11 +46,13 @@ describe('MovieCard', () => {
     expect(screen.getByRole('button', { name: 'Delete Arrival' })).toBeDisabled();
   });
 
-  it('shows a fallback poster without artwork and caps genres at three', () => {
+  it('shows a fallback poster without artwork and a compact genre summary', () => {
     render(MovieCard, { movie, onedit: vi.fn(), ondelete: vi.fn() });
     expect(screen.getByRole('img', { name: 'No artwork available' })).toBeInTheDocument();
-    expect(screen.queryByText('Thriller')).not.toBeInTheDocument();
-    expect(screen.getByText('Mystery')).toBeInTheDocument();
+    expect(screen.getByText('Sci-Fi')).toBeInTheDocument();
+    expect(screen.getByText('+3')).toBeInTheDocument();
+    expect(screen.queryByText('Mystery')).not.toBeInTheDocument();
+    expect(screen.getByText(/2016 · 116 min/)).toBeInTheDocument();
   });
 
   it('falls back to the placeholder when the image fails to load', async () => {

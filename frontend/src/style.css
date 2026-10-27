@@ -1479,3 +1479,8 @@ textarea[aria-invalid='true'] {
 .movie-card .chips {
   margin-top: 2px;
 }
+.chip.more {
+  color: var(--muted);
+  background: transparent;
+  border-color: var(--border);
+}
