@@ -11,6 +11,8 @@
   import MovieCard from './lib/components/MovieCard.svelte';
   import PersonCard from './lib/components/PersonCard.svelte';
   import Logo from './lib/components/Logo.svelte';
+  import MovieDetails from './lib/components/MovieDetails.svelte';
+  import PersonDetails from './lib/components/PersonDetails.svelte';
   import { readSaved, toggleSaved, writeSaved } from './lib/state/saved';
 
   type Tab = 'movies' | 'people' | 'saved' | 'search';
@@ -31,6 +33,8 @@
   let timer: ReturnType<typeof setTimeout>;
 
   let modal: 'movie' | 'person' | null = null;
+  let viewMovie: Movie | null = null;
+  let viewPerson: Person | null = null;
   let editingMovie: Movie | null = null;
   let editingPerson: Person | null = null;
   let movieForm: MovieInput = blankMovie();
@@ -58,6 +62,12 @@
     avatarPreview = next ? URL.createObjectURL(next) : '';
   }
   $: savedLabel = savedIds.length > 99 ? '99+' : String(savedIds.length);
+  function closeDetail() { viewMovie = null; viewPerson = null; }
+  function onKey(event: KeyboardEvent) {
+    if (event.key !== 'Escape') return;
+    if (viewMovie || viewPerson) closeDetail();
+    else if (modal && !busy) { modal = null; error = ''; }
+  }
   function toggleSave(movie: Movie) {
     savedIds = toggleSaved(savedIds, movie.id);
     writeSaved(savedIds);
@@ -196,6 +206,8 @@
   }
 </script>
 
+<svelte:window onkeydown={onKey} />
+
 <svelte:head>
   <title>MovieHub — Your film collection</title>
   <meta name="description" content="Browse and manage movies, artwork, cast and creators." />
@@ -246,7 +258,7 @@
     {#if movies && (!loading || movies.items.length)}
       {#if !movies.items.length}<p class="empty">No movies found. Try another search or add your first movie.</p>{/if}
       <div class="grid">{#each movies.items as movie (movie.id)}
-        <MovieCard {movie} {busy} saved={savedIds.includes(movie.id)} ontoggle={() => toggleSave(movie)} onedit={() => openMovie(movie)} ondelete={() => void remove('movie', movie.id, movie.title)} />
+        <MovieCard {movie} {busy} saved={savedIds.includes(movie.id)} ontoggle={() => toggleSave(movie)} onopen={() => viewMovie = movie} onedit={() => openMovie(movie)} ondelete={() => void remove('movie', movie.id, movie.title)} />
       {/each}</div>
     {/if}
   {:else if tab === 'saved'}
@@ -255,7 +267,7 @@
       <p class="empty">Nothing saved yet. Tap the bookmark on any movie to keep it here for later.</p>
     {:else if savedMovies && (!loading || savedMovies.length)}
       <div class="grid">{#each savedMovies as movie (movie.id)}
-        <MovieCard {movie} {busy} saved={true} ontoggle={() => toggleSave(movie)} onedit={() => openMovie(movie)} ondelete={() => void remove('movie', movie.id, movie.title)} />
+        <MovieCard {movie} {busy} saved={true} ontoggle={() => toggleSave(movie)} onopen={() => viewMovie = movie} onedit={() => openMovie(movie)} ondelete={() => void remove('movie', movie.id, movie.title)} />
       {/each}</div>
     {/if}
   {:else if tab === 'people'}
@@ -263,7 +275,7 @@
     {#if people && (!loading || people.items.length)}
       {#if !people.items.length}<p class="empty">No people found. Try another search or add someone.</p>{/if}
       <div class="grid people-grid">{#each people.items as person (person.id)}
-        <PersonCard {person} {busy} onedit={() => openPerson(person)} ondelete={() => void remove('person', person.id, person.name)} />
+        <PersonCard {person} {busy} onopen={() => viewPerson = person} onedit={() => openPerson(person)} ondelete={() => void remove('person', person.id, person.name)} />
       {/each}</div>
     {/if}
   {:else}
@@ -338,19 +350,17 @@
   </dialog></div>
 {/if}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+{#if viewMovie || viewPerson}
+  <div class="backdrop" role="presentation" onclick={(event) => { if (event.target === event.currentTarget) closeDetail(); }}>
+    <dialog open class="dialog detail" aria-modal="true" aria-label={viewMovie ? 'Movie details' : 'Person details'}>
+      {#if viewMovie}
+        {@const shown = viewMovie}
+        <MovieDetails movie={shown} saved={savedIds.includes(shown.id)} onclose={closeDetail}
+          ontoggle={() => toggleSave(shown)} onedit={() => { closeDetail(); openMovie(shown); }} />
+      {:else if viewPerson}
+        {@const shown = viewPerson}
+        <PersonDetails person={shown} onclose={closeDetail} onedit={() => { closeDetail(); openPerson(shown); }} />
+      {/if}
+    </dialog>
+  </div>
+{/if}

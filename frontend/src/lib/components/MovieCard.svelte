@@ -4,13 +4,14 @@
   import Icon from './Icon.svelte';
   import IconButton from './IconButton.svelte';
 
-  let { movie, busy = false, saved = false, onedit, ondelete, ontoggle }: {
+  let { movie, busy = false, saved = false, onopen, onedit, ondelete, ontoggle }: {
     movie: Movie;
     busy?: boolean;
     saved?: boolean;
     onedit: () => void;
     ondelete: () => void;
     ontoggle?: () => void;
+    onopen?: () => void;
   } = $props();
 
   let imageFailed = $state(false);
@@ -44,7 +45,7 @@
     </div>
   </div>
   <div class="card-body">
-    <h3 title={movie.title}>{movie.title}</h3>
+    <h3 title={movie.title}>{#if onopen}<button type="button" class="card-link" onclick={onopen}>{movie.title}</button>{:else}{movie.title}{/if}</h3>
     <p class="meta">
       {#if movie.runtimeMinutes}<Icon name="clock" size={13} /> {movie.runtimeMinutes} min{:else}Runtime unknown{/if}
     </p>

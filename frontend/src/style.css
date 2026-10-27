@@ -337,3 +337,40 @@ progress { width: 100%; margin-top: 8px; accent-color: var(--accent); }
 /* Keep the count inside the bookmark however many digits it has. */
 .count[data-len="1"] { font-size: 0.68rem; }
 .count[data-len="3"] { font-size: 0.5rem; letter-spacing: -0.06em; }
+
+/* ---------- Clickable cards and detail popup ---------- */
+.card-link { padding: 0; margin: 0; background: none; border: 0; color: inherit; font: inherit; text-align: left; letter-spacing: inherit; cursor: pointer; }
+.card-link::after { content: ''; position: absolute; inset: 0; z-index: 1; border-radius: inherit; }
+.card-link:focus-visible { outline: none; }
+.card-link:focus-visible::after { outline: 2px solid var(--gold); outline-offset: -2px; }
+.card .card-actions, .card .save-action { z-index: 2; }
+.card:has(.card-link) { cursor: pointer; }
+.detail { max-width: 760px; }
+.detail-head { display: flex; flex-direction: column; gap: 18px; }
+.detail-poster { width: 150px; aspect-ratio: 2 / 3; flex: none; align-self: center; overflow: hidden; border-radius: 14px; background: linear-gradient(160deg, hsl(var(--hue, 220) 55% 30%), hsl(calc(var(--hue, 220) + 40) 50% 14%)); }
+.detail-poster img { width: 100%; height: 100%; object-fit: cover; }
+.detail-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.detail-main .dialog-head { margin-bottom: 0; align-items: flex-start; gap: 12px; }
+.detail-main h2 { overflow-wrap: anywhere; }
+.detail-meta { display: flex; gap: 14px; }
+.detail-meta span { display: inline-flex; align-items: center; gap: 5px; }
+.detail-text { margin: 4px 0; color: #cfc9e0; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.detail-actions { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+.detail-actions .icon-btn { width: 42px; height: 42px; background: var(--surface-2); border-color: var(--border); }
+.detail-actions .icon-btn.active { background: var(--gold); border-color: var(--gold); }
+.avatar.xlarge { width: 120px; height: 120px; border-radius: 30px; font-size: 2.2rem; flex: none; align-self: center; }
+.credit-list { display: grid; gap: 10px; margin: 0; }
+.credit-list dt { color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; }
+.credit-list dd { margin: 2px 0 0; overflow-wrap: anywhere; }
+.people-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; grid-template-columns: 1fr; }
+.people-list li { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.people-list li > span:last-child { display: flex; flex-direction: column; min-width: 0; overflow-wrap: anywhere; }
+.people-list small { color: var(--muted); }
+.mini-avatar { display: grid; place-items: center; flex: none; width: 38px; height: 38px; border-radius: 12px; font-size: 0.8rem; font-weight: 800; color: #fff; background: linear-gradient(135deg, hsl(var(--hue, 220) 60% 45%), hsl(calc(var(--hue, 220) + 50) 60% 32%)); }
+.mini-avatar.square { border-radius: 10px; }
+@media (min-width: 640px) {
+  .detail-head { flex-direction: row; gap: 24px; }
+  .detail-poster { width: 200px; align-self: flex-start; }
+  .avatar.xlarge { align-self: flex-start; }
+  .people-list { grid-template-columns: 1fr 1fr; }
+}

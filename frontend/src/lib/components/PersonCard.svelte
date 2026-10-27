@@ -3,11 +3,12 @@
   import { artworkSrc, hue, initials, roleLabel } from '../format';
   import IconButton from './IconButton.svelte';
 
-  let { person, busy = false, onedit, ondelete }: {
+  let { person, busy = false, onopen, onedit, ondelete }: {
     person: Person;
     busy?: boolean;
     onedit: () => void;
     ondelete: () => void;
+    onopen?: () => void;
   } = $props();
 
   let imageFailed = $state(false);
@@ -24,7 +25,7 @@
     {/if}
   </div>
   <div class="card-body">
-    <h3 title={person.name}>{person.name}</h3>
+    <h3 title={person.name}>{#if onopen}<button type="button" class="card-link" onclick={onopen}>{person.name}</button>{:else}{person.name}{/if}</h3>
     <p class="meta">{person.birthDate ? `Born ${person.birthDate}` : 'Birth date unknown'}</p>
     {#if roles.length}
       <div class="chips">{#each roles as role}<span class="chip">{roleLabel(role)}</span>{/each}</div>
