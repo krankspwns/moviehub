@@ -87,6 +87,12 @@
   }
   onMount(() => {
     void load();
+    // The hero stats show both totals, so fetch the list we are not displaying too.
+    if (tab !== 'people')
+      void listPeople('', 0, null).then(
+        (data) => (people ??= data),
+        () => {},
+      );
     return () => clearTimeout(timer);
   });
 
