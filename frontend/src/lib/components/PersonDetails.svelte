@@ -20,7 +20,7 @@
       <h2>{person.name}</h2>
       <button class="close" aria-label="Close details" onclick={onclose}><Icon name="close" size={20} /></button>
     </div>
-    <p class="meta detail-meta"><span>{person.birthDate ? `Born ${person.birthDate}` : 'Birth date unknown'}</span></p>
+    <p class="meta detail-meta"><span>{person.birthDate ? `Born ${person.birthDate}` : 'Birth Date Unknown'}</span></p>
     {#if roles.length}<div class="chips">
         {#each roles as role (role)}<span class="chip">{roleLabel(role)}</span>{/each}
       </div>{/if}

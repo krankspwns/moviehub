@@ -52,7 +52,7 @@
     <p class="meta detail-meta">
       <span>{movie.releaseYear}</span>
       <span
-        >{#if movie.runtimeMinutes}<Icon name="clock" size={13} /> {movie.runtimeMinutes} min{:else}Runtime not set{/if}</span
+        >{#if movie.runtimeMinutes}<Icon name="clock" size={13} /> {movie.runtimeMinutes} min{:else}Runtime Not Set{/if}</span
       >
     </p>
     {#if movie.genres.length}<div class="chips">

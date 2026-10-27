@@ -40,7 +40,7 @@
       {#if onopen}<button type="button" class="card-link" onclick={onopen}>{person.name}</button
         >{:else}{person.name}{/if}
     </h3>
-    <p class="meta">{person.birthDate ? `Born ${person.birthDate}` : 'Birth date unknown'}</p>
+    <p class="meta">{person.birthDate ? `Born ${person.birthDate}` : 'Birth Date Unknown'}</p>
     {#if roles.length}
       <div class="chips">
         {#each roles as role (role)}<span class="chip">{roleLabel(role)}</span>{/each}

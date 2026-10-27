@@ -67,7 +67,7 @@ describe('details popup', () => {
     expect(screen.getByText('No synopsis yet.')).toBeInTheDocument();
     expect(screen.getByText('No creators credited.')).toBeInTheDocument();
     expect(screen.getByText('No cast credited.')).toBeInTheDocument();
-    expect(screen.getByText(/Runtime not set/)).toBeInTheDocument();
+    expect(screen.getByText(/Runtime Not Set/)).toBeInTheDocument();
   });
 
   it('shows person details and filmography, including empty states', () => {
@@ -81,7 +81,7 @@ describe('details popup', () => {
       onedit: vi.fn(),
     });
     expect(screen.getByText('No biography yet.')).toBeInTheDocument();
-    expect(screen.getByText('Birth date unknown')).toBeInTheDocument();
+    expect(screen.getByText('Birth Date Unknown')).toBeInTheDocument();
     expect(screen.getByText('Not credited on any movie yet.')).toBeInTheDocument();
   });
 });

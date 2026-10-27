@@ -81,7 +81,7 @@ describe('MovieCard', () => {
 
   it('handles unset runtime', () => {
     render(MovieCard, { movie: { ...movie, runtimeMinutes: 0 }, onedit: vi.fn(), ondelete: vi.fn() });
-    expect(screen.getByText(/Runtime not set/)).toBeInTheDocument();
+    expect(screen.getByText(/Runtime Not Set/)).toBeInTheDocument();
   });
 });
 
@@ -90,7 +90,7 @@ describe('PersonCard', () => {
     const onedit = vi.fn();
     const ondelete = vi.fn();
     render(PersonCard, { person, onedit, ondelete });
-    expect(screen.getByText('Birth date unknown')).toBeInTheDocument();
+    expect(screen.getByText('Birth Date Unknown')).toBeInTheDocument();
     expect(screen.getByText('Actor')).toBeInTheDocument();
     await fireEvent.click(screen.getByRole('button', { name: 'Edit Amy Adams' }));
     await fireEvent.click(screen.getByRole('button', { name: 'Delete Amy Adams' }));
