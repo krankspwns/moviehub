@@ -1423,3 +1423,59 @@ textarea[aria-invalid='true'] {
   border-color: var(--gold);
   color: #2a1d00;
 }
+
+/* ---------- Movie cards: poster-first layout (no box, text sits under the artwork) ---------- */
+.movie-card {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+}
+@media (hover: hover) {
+  .movie-card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+}
+.movie-card .poster {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 6px 18px var(--shadow-color);
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+.movie-card .poster::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  height: 40%;
+  background: linear-gradient(transparent, rgb(0 0 0 / 0.55));
+  pointer-events: none;
+}
+.movie-card .badge {
+  z-index: 1;
+  color: #fff;
+  background: rgb(0 0 0 / 0.45);
+  border-color: rgb(255 255 255 / 0.2);
+}
+@media (hover: hover) {
+  .movie-card:hover .poster {
+    transform: translateY(-4px);
+    box-shadow: 0 14px 30px var(--shadow-strong);
+  }
+}
+.movie-card .card-body {
+  gap: 4px;
+  padding: 10px 2px 0;
+}
+.movie-card .card-body h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+.movie-card .meta {
+  font-size: 0.8rem;
+}
+.movie-card .chips {
+  margin-top: 2px;
+}
