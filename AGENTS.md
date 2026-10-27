@@ -61,4 +61,4 @@ Run only the checks for the module you changed. Run everything before the final 
 4. Delegate independent module work in parallel; give each sub-task its module, the contract it relies on, and the test command.
 5. Report results briefly: files changed, commands run, pass/fail.
 
-
+Human-oriented walkthrough: `docs/PROJECT-TOUR.md` (keep it in sync when files move).

@@ -21,6 +21,8 @@ GraphQL is used for all structured frontend/backend data. Artwork uses a small H
 
 Features: paginated movie and person lists; movie/person create, update and delete; credits with actor/creator roles and filmography; searches across movies and people; genre and role filtering; artwork upload with progress and cache-busted display; avatar photos for cast and creators; click-through detail popups for movies (creators, cast and characters) and people (bio, filmography); a **Saved** list (bookmark movies, stored in the browser's localStorage, so it is per browser and not shared); a violet/pink theme with a light/dark toggle (follows the OS by default, remembered per browser) and a custom favicon; loading, empty, success and error states.
 
+New to the codebase? Start with the [project tour](docs/PROJECT-TOUR.md): a 10-minute walkthrough of what each folder and file does and how one request flows through the system.
+
 ## Prerequisites
 
 - JDK 21 (Gradle 8.14.3 must itself run on a supported JDK; Java 26 as the default `java` is not supported). On macOS, if several JDKs are installed, run `export JAVA_HOME=$(/usr/libexec/java_home -v 21)` in each backend terminal first.
