@@ -63,10 +63,10 @@ To reset local data **after stopping the services**, remove the `catalog-service
 ## Validation
 
 ```sh
-./gradlew test
+./gradlew ktlintCheck test   # Kotlin style (auto-fix: ./gradlew ktlintFormat) + tests
 cd frontend
 npm ci
-npm run check
+npm run verify   # prettier, eslint, svelte-check, tests, build (individual: format, lint, check, test)
 npm test
 npm run build
 ```

@@ -30,11 +30,11 @@ Svelte+TypeScript frontend; ≥2 Kotlin Spring Boot services; service↔service 
 ```sh
 ./setup.sh [check|install|start|stop|test] [--yes]   # bootstrap + run everything; logs in .run/
 export JAVA_HOME=$(/usr/libexec/java_home -v 21)   # Gradle 8.14 does not run on JDK 26
-./gradlew test                                      # all backend tests
+./gradlew ktlintCheck test                          # Kotlin style + all backend tests (fix style: ktlintFormat)
 ./gradlew :catalog-service:test                     # one module (preferred; cheaper)
 ./gradlew :catalog-service:bootRun                  # :9090 gRPC
 ./gradlew :gateway-service:bootRun                  # :8080 HTTP
-cd frontend && npm ci && npm run check && npm test && npm run build && npm run dev   # :5173
+cd frontend && npm ci && npm run verify && npm run dev   # :5173
 ```
 
 Run only the checks for the module you changed. Run everything before the final commit of a feature.

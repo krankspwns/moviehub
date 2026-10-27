@@ -19,4 +19,4 @@ Rules
 - Keep types in `catalog.ts` in sync with `gateway-service/.../schema.graphqls`.
 - Match the existing Svelte style (`onclick=` attributes, `bind:`); do not mix in new patterns without migrating.
 - `typescript` stays at `~5.9` (svelte-check compatibility).
-- Verify: `npm run check && npm test && npm run build`.
+- Verify: `npm run verify` (Prettier check, ESLint, svelte-check, tests, build). Auto-format with `npm run format`. Runes are mandatory; keep `App.svelte` as orchestration only and put form/dialog state in components.
