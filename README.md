@@ -75,7 +75,15 @@ Backend tests exercise service validation, paging/search, artwork, gRPC and gate
 
 ## AI tool use
 
-GitHub Copilot was used as a productivity aid to draft implementation code, tests, and this README, and to run checks during development. The decisions to keep structured data in GraphQL, use multipart HTTP for binary upload progress, proxy gateway calls over gRPC, and validate inputs in the catalog service reflect the assessment's requirements. Review the code and tests before submission; the submitter is responsible for explaining and maintaining the result.
+This project was built with **GitHub Copilot (agent mode in the JetBrains IDE)** as a development aid.
+
+**What the AI did:** drafted most of the Kotlin services, the Svelte/TypeScript UI, the unit tests, the setup script, the `AGENTS.md` files and the documentation, and ran builds, tests and live smoke tests from the terminal. It also helped diagnose problems (for example a gRPC version mismatch that only appeared when the services were actually started).
+
+**What was decided from the assessment, not by the AI:** GraphQL for structured frontend/backend data, gRPC between the two services, a separate gateway and catalog service, and all business validation living in the catalog service.
+
+**How the output was checked:** backend tests (`./gradlew ktlintCheck test`), frontend checks (`cd frontend && npm run verify`), and end-to-end smoke tests against the running stack (create, search, image upload and download). Tool-generated code was refactored where it fell short (for example splitting a large component and enforcing lint/format rules).
+
+To understand the code quickly, start with [docs/PROJECT-TOUR.md](docs/PROJECT-TOUR.md). `AGENTS.md` files describe the same layout for AI assistants.
 
 ## Limitations
 
