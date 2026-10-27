@@ -131,13 +131,19 @@ cmd_install() {
   ok "Gradle wrapper and backend dependencies ready"
 }
 
-port_open() { (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null; }
+# Servers may bind IPv4 only, IPv6 only (Vite on some machines) or both, so try both.
+port_open() {
+  (exec 3<>"/dev/tcp/localhost/$1") 2>/dev/null || (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null || (exec 3<>"/dev/tcp/::1/$1") 2>/dev/null
+}
 
 wait_for() { # name, command-that-succeeds-when-ready, timeout seconds
   local name="$1" probe="$2" timeout="$3" waited=0
   until eval "$probe"; do
     sleep 1; waited=$((waited + 1))
-    [ "$waited" -ge "$timeout" ] && die "$name did not become ready in ${timeout}s. See $RUN_DIR/*.log"
+    if [ "$waited" -ge "$timeout" ]; then
+      cmd_stop >/dev/null 2>&1 || true
+      die "$name did not become ready in ${timeout}s. Started services were stopped. See $RUN_DIR/*.log"
+    fi
   done
   ok "$name ready"
 }
@@ -217,4 +223,5 @@ case "${COMMAND:-setup}" in
   test)    cmd_test ;;
   setup)   cmd_install && cmd_start ;;
 esac
+
 
