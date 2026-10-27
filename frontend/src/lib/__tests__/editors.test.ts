@@ -23,28 +23,27 @@ describe('MovieEditor', () => {
   it('shows a specific message and does not call the server when the form is invalid', async () => {
     mockFetch.mockResolvedValue(reply(peoplePage));
     render(MovieEditor, { movie: null, onsaved: vi.fn(), onclose: vi.fn() });
-    await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1)); // person picker
     await fireEvent.submit(screen.getByRole('button', { name: 'Save Movie' }).closest('form')!);
     expect(await screen.findByRole('alert')).toHaveTextContent('Enter a movie title.');
-    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 
   it('saves a valid movie and reports success', async () => {
     const onsaved = vi.fn();
-    mockFetch.mockResolvedValueOnce(reply(peoplePage)).mockResolvedValueOnce(reply({ createMovie: { id: 'm1' } }));
+    mockFetch.mockResolvedValueOnce(reply({ createMovie: { id: 'm1' } }));
     render(MovieEditor, { movie: null, onsaved, onclose: vi.fn() });
     await fireEvent.input(screen.getByLabelText(/Title/), { target: { value: '  Heat  ' } });
     await fireEvent.input(screen.getByLabelText(/Genres/), { target: { value: 'Crime, crime, Drama' } });
     await fireEvent.submit(screen.getByRole('button', { name: 'Save Movie' }).closest('form')!);
     await waitFor(() => expect(onsaved).toHaveBeenCalledOnce());
-    const variables = bodyOf(1).variables.input;
+    const variables = bodyOf(0).variables.input;
     expect(variables.title).toBe('Heat');
     expect(variables.genres).toEqual(['Crime', 'Drama']);
   });
 
   it('shows server errors and stays open', async () => {
     const onsaved = vi.fn();
-    mockFetch.mockResolvedValueOnce(reply(peoplePage)).mockResolvedValueOnce({
+    mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ errors: [{ message: 'title already exists', extensions: { code: 'INVALID' } }] }),
     });

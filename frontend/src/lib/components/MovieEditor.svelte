@@ -1,20 +1,11 @@
 <script lang="ts">
-  import { onMount, untrack } from 'svelte';
-  import {
-    imageProblem,
-    listPeople,
-    roles,
-    saveMovie,
-    uploadArtwork,
-    type CreditInput,
-    type Movie,
-    type MovieInput,
-    type Person,
-  } from '../api/catalog';
+  import { untrack } from 'svelte';
+  import { imageProblem, roles, saveMovie, uploadArtwork, type Movie, type MovieInput } from '../api/catalog';
   import { artworkSrc, blockEnterSubmit, errorMessage } from '../format';
   import { LIMITS, movieFieldErrors, parseGenres, validateMovie } from '../validate';
   import FieldHint from './FieldHint.svelte';
   import Icon from './Icon.svelte';
+  import PersonPicker from './PersonPicker.svelte';
 
   let { movie, onsaved, onclose }: { movie: Movie | null; onsaved: () => void; onclose: () => void } = $props();
 
@@ -52,55 +43,15 @@
   let busy = $state(false);
   let error = $state('');
 
-  // Person picker for credits (paged, with a stale-response guard).
-  let pickerQuery = $state('');
-  let pickerPeople = $state<Person[]>([]);
-  let pickerPage = $state(0);
-  let pickerHasMore = $state(false);
-  let pickerBusy = $state(false);
-  let pickerRequestId = 0;
-  let pickerTimer: ReturnType<typeof setTimeout>;
+  // Display names of the chosen people (the picker reports id + name when the user picks one).
   const knownPeople = $state<Record<string, string>>({});
   for (const credit of initial?.credits ?? []) knownPeople[credit.personId] = credit.personName;
-
-  async function loadPicker(reset = false) {
-    if (reset) {
-      pickerPage = 0;
-      pickerPeople = [];
-      pickerHasMore = false;
-    }
-    const current = ++pickerRequestId;
-    pickerBusy = true;
-    try {
-      const data = await listPeople(pickerQuery, pickerPage);
-      if (current !== pickerRequestId) return;
-      pickerPeople = reset ? data.items : [...pickerPeople, ...data.items];
-      for (const person of data.items) knownPeople[person.id] = person.name;
-      pickerHasMore = pickerPage + 1 < data.totalPages;
-    } catch (e) {
-      if (current === pickerRequestId) error = errorMessage(e);
-    } finally {
-      if (current === pickerRequestId) pickerBusy = false;
-    }
-  }
-  onMount(() => {
-    void loadPicker(true);
-    return () => clearTimeout(pickerTimer);
-  });
-  // Debounced, and read after bind:value has updated pickerQuery (reading it inside the input event can be one key behind).
-  function searchPeople() {
-    clearTimeout(pickerTimer);
-    pickerTimer = setTimeout(() => void loadPicker(true), 250);
-  }
 
   function addCredit() {
     form.credits = [...form.credits, { personId: '', role: 'ACTOR', characterName: '' }];
   }
   function removeCredit(index: number) {
     form.credits = form.credits.filter((_, i) => i !== index);
-  }
-  function chosenPerson(id: string, credit: CreditInput): string {
-    return knownPeople[id] || editing?.credits.find((c) => c.personId === id)?.personName || credit.personId;
   }
   function close() {
     if (!busy) onclose();
@@ -209,58 +160,30 @@
           <h3>Cast & creators</h3>
           <button type="button" onclick={addCredit}>+ Add credit</button>
         </div>
-        {#if form.credits.length}
-          <label
-            >Search people <input
-              type="search"
-              placeholder="Type a name to narrow the Person lists below…"
-              bind:value={pickerQuery}
-              oninput={searchPeople}
-            />
-            <small aria-live="polite">
-              {#if pickerBusy}Searching…{:else if pickerQuery.trim()}{pickerPeople.length}{pickerHasMore ? '+' : ''}
-                {pickerPeople.length === 1 ? 'person matches' : 'people match'} “{pickerQuery.trim()}”{/if}
-            </small></label
-          >
-          {#each form.credits as credit, index (credit)}
-            <div class="credit-editor">
-              <select aria-label="Person" bind:value={credit.personId} required>
-                <option value="">Select person</option>
-                {#if credit.personId && !pickerPeople.some((p) => p.id === credit.personId)}
-                  <option value={credit.personId}>{chosenPerson(credit.personId, credit)}</option>
-                {/if}
-                {#each pickerPeople as person (person.id)}<option value={person.id}>{person.name}</option>{/each}
-              </select>
-              <select aria-label="Role" bind:value={credit.role}
-                >{#each roles as role (role)}<option value={role}>{role}</option>{/each}</select
-              >
-              {#if credit.role === 'ACTOR'}
-                <input
-                  aria-label="Character name"
-                  placeholder="Character (optional)"
-                  bind:value={credit.characterName}
-                />
-              {/if}
-              <button type="button" class="danger" aria-label="Remove credit" onclick={() => removeCredit(index)}
-                >×</button
-              >
+        {#each form.credits as credit, index (credit)}
+          <div class="credit-editor">
+            <div class="credit-person">
+              <PersonPicker
+                personId={credit.personId}
+                name={knownPeople[credit.personId] ?? ''}
+                onpick={(person) => {
+                  credit.personId = person.id;
+                  knownPeople[person.id] = person.name;
+                }}
+              />
             </div>
-          {/each}
-          {#if errors.credits}<small class="field-error" aria-live="polite">{errors.credits}</small>{/if}
-          {#if pickerHasMore}<button
-              type="button"
-              disabled={pickerBusy}
-              onclick={() => {
-                pickerPage++;
-                void loadPicker();
-              }}>Load more people</button
-            >{/if}
-          {#if !pickerPeople.length && !pickerBusy}<p class="hint">
-              {pickerQuery.trim()
-                ? 'No one matches that search. Clear it, or add the person in Cast & creators first.'
-                : 'No people yet. Add them in Cast & creators first.'}
-            </p>{/if}
-        {/if}
+            <select aria-label="Role" bind:value={credit.role}
+              >{#each roles as role (role)}<option value={role}>{role}</option>{/each}</select
+            >
+            {#if credit.role === 'ACTOR'}
+              <input aria-label="Character name" placeholder="Character (optional)" bind:value={credit.characterName} />
+            {/if}
+            <button type="button" class="danger" aria-label="Remove credit" onclick={() => removeCredit(index)}
+              >×</button
+            >
+          </div>
+        {/each}
+        {#if errors.credits}<small class="field-error" aria-live="polite">{errors.credits}</small>{/if}
       </div>
       <div class="form-section">
         <h3>Artwork</h3>

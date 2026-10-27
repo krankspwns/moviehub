@@ -1566,3 +1566,56 @@ textarea[aria-invalid='true'] {
   background: var(--danger);
   color: #240606;
 }
+
+/* ---------- Person picker (type-to-search) ---------- */
+.credit-person {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+.picker {
+  position: relative;
+}
+.picker-input {
+  width: 100%;
+}
+.picker-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  left: 0;
+  z-index: 10;
+  max-height: 220px;
+  margin: 0;
+  padding: 4px;
+  overflow-y: auto;
+  list-style: none;
+  background: var(--bg-elev);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  box-shadow: 0 14px 32px var(--shadow-strong);
+}
+.picker-list li {
+  padding: 9px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.picker-list li.active,
+.picker-list li:hover {
+  background: var(--surface-2);
+}
+.picker-list li[aria-selected='true'] {
+  font-weight: 700;
+  color: var(--accent-soft);
+}
+.picker-list li.picker-note {
+  color: var(--muted);
+  font-size: 0.85rem;
+  cursor: default;
+}
+.picker-list li.picker-note:hover {
+  background: transparent;
+}
+.picker-list li.picker-note.error {
+  color: var(--danger);
+}
