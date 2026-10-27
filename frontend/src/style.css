@@ -24,11 +24,11 @@
   --text-soft: #c3bdd6;
   --placeholder: #7d7595;
   --eyebrow: var(--gold);
-  --topbar-bg: var(--topbar-bg);
-  --tabbar-bg: var(--tabbar-bg);
+  --topbar-bg: rgb(14 12 20 / 0.82);
+  --tabbar-bg: rgb(21 18 30 / 0.95);
   --overlay: rgb(14 12 20 / 0.72);
   --overlay-border: rgb(255 255 255 / 0.16);
-  --backdrop: var(--backdrop);
+  --backdrop: rgb(6 4 12 / 0.72);
   --chip-text: #e4d9ff;
   --chip-bg: rgb(139 92 246 / 0.16);
   --chip-border: rgb(139 92 246 / 0.34);
@@ -140,9 +140,14 @@ img {
   display: flex;
   align-items: center;
   gap: 10px;
+  padding: 0;
+  color: inherit;
+  background: none;
+  border: 0;
   font-weight: 800;
   font-size: 1.25rem;
   letter-spacing: -0.03em;
+  cursor: pointer;
 }
 .brand-mark {
   display: grid;
@@ -1400,4 +1405,9 @@ textarea[aria-invalid='true'] {
   color: var(--danger);
   font-weight: 600;
   font-size: 0.8rem;
+}
+
+.saved-heading {
+  margin: 22px 0 12px;
+  font-size: 1.05rem;
 }
