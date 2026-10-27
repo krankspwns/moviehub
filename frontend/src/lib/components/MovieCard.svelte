@@ -4,11 +4,13 @@
   import Icon from './Icon.svelte';
   import IconButton from './IconButton.svelte';
 
-  let { movie, busy = false, onedit, ondelete }: {
+  let { movie, busy = false, saved = false, onedit, ondelete, ontoggle }: {
     movie: Movie;
     busy?: boolean;
+    saved?: boolean;
     onedit: () => void;
     ondelete: () => void;
+    ontoggle?: () => void;
   } = $props();
 
   let imageFailed = $state(false);
@@ -27,6 +29,15 @@
       </div>
     {/if}
     <span class="badge">{movie.releaseYear}</span>
+    {#if ontoggle}
+      <div class="save-action" class:is-saved={saved}>
+        <IconButton
+          icon="bookmark" pressed={saved}
+          label={saved ? `Remove ${movie.title} from saved` : `Save ${movie.title}`}
+          onclick={ontoggle}
+        />
+      </div>
+    {/if}
     <div class="card-actions">
       <IconButton icon="edit" label="Edit {movie.title}" disabled={busy} onclick={onedit} />
       <IconButton icon="trash" label="Delete {movie.title}" variant="danger" disabled={busy} onclick={ondelete} />

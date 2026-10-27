@@ -8,7 +8,7 @@ export interface Movie {
   genres: string[]; artworkUrl: string | null; credits: Credit[];
 }
 export interface Person {
-  id: string; name: string; bio: string; birthDate: string | null;
+  id: string; name: string; bio: string; birthDate: string | null; avatarUrl: string | null;
   filmography: { movieId: string; title: string; role: Role }[];
 }
 export interface Page<T> { items: T[]; total: number; page: number; pageSize: number; totalPages: number }
@@ -19,7 +19,7 @@ export interface MovieInput {
 export interface PersonInput { name: string; bio: string; birthDate: string }
 
 const movieFields = 'id title synopsis releaseYear runtimeMinutes genres artworkUrl credits { personId personName role characterName }';
-const personFields = 'id name bio birthDate filmography { movieId title role }';
+const personFields = 'id name bio birthDate avatarUrl filmography { movieId title role }';
 
 export async function graphql<T>(query: string, variables: Record<string, unknown> = {}): Promise<T> {
   let response: Response;
@@ -82,10 +82,22 @@ export async function deletePerson(id: string): Promise<boolean> {
   return (await graphql<{ deletePerson: boolean }>('mutation ($id: ID!) { deletePerson(id: $id) }', { id })).deletePerson;
 }
 
-export function uploadArtwork(id: string, file: File, onProgress: (percent: number) => void): Promise<void> {
+/** Fetches several movies by id in one round trip; ids that no longer exist are omitted. Order is preserved. */
+export async function getMovies(ids: string[]): Promise<Movie[]> {
+  if (!ids.length) return [];
+  // Aliases and variable names are generated from the index only; ids always travel as variables.
+  const declarations = ids.map((_, i) => `$id${i}: ID!`).join(', ');
+  const selections = ids.map((_, i) => `m${i}: movie(id: $id${i}) { ${movieFields} }`).join(' ');
+  const variables: Record<string, unknown> = {};
+  ids.forEach((id, i) => { variables[`id${i}`] = id; });
+  const data = await graphql<Record<string, Movie | null>>(`query (${declarations}) { ${selections} }`, variables);
+  return ids.map((_, i) => data[`m${i}`]).filter((movie): movie is Movie => movie != null);
+}
+
+function uploadImage(path: string, file: File, onProgress: (percent: number) => void): Promise<void> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', `/api/movies/${encodeURIComponent(id)}/artwork`);
+    xhr.open('POST', path);
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable) onProgress(Math.round(event.loaded / event.total * 100));
     };
@@ -101,3 +113,26 @@ export function uploadArtwork(id: string, file: File, onProgress: (percent: numb
     xhr.send(form);
   });
 }
+
+export function uploadArtwork(id: string, file: File, onProgress: (percent: number) => void): Promise<void> {
+  return uploadImage(`/api/movies/${encodeURIComponent(id)}/artwork`, file, onProgress);
+}
+
+export function uploadAvatar(id: string, file: File, onProgress: (percent: number) => void): Promise<void> {
+  return uploadImage(`/api/people/${encodeURIComponent(id)}/avatar`, file, onProgress);
+}
+
+export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+
+/** Client-side pre-check mirroring the server rules; returns a message or null when the file is acceptable. */
+export function imageProblem(file: File | null): string | null {
+  if (!file) return null;
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > MAX_IMAGE_BYTES) {
+    return 'Image must be a JPEG, PNG or WebP file smaller than 5 MB.';
+  }
+  return null;
+}
+
+
+
+
