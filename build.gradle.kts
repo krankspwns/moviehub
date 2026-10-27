@@ -5,6 +5,7 @@ plugins {
     id("org.springframework.boot") version "3.5.6" apply false
     id("io.spring.dependency-management") version "1.1.7" apply false
     id("com.google.protobuf") version "0.9.4" apply false
+    id("org.jlleitschuh.gradle.ktlint") version "12.1.2" apply false
 }
 
 allprojects {
@@ -17,6 +18,13 @@ allprojects {
 }
 
 subprojects {
+    // Kotlin style gate for hand-written code: ./gradlew ktlintCheck (auto-fix with ktlintFormat).
+    pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
+        apply(plugin = "org.jlleitschuh.gradle.ktlint")
+        extensions.configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
+            version.set("1.5.0") // needs to understand Kotlin 2.1 syntax
+        }
+    }
     pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
         extensions.configure<org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension> {
             jvmToolchain(21)
