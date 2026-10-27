@@ -1,15 +1,18 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import {
-    deleteMovie, deletePerson, listMovies, listPeople, roles, saveMovie, savePerson, search, uploadArtwork,
+    deleteMovie, deletePerson, getMovies, imageProblem, listMovies, listPeople, roles, saveMovie, savePerson, search,
+    uploadArtwork, uploadAvatar,
     type CreditInput, type Movie, type MovieInput, type Page, type Person, type PersonInput, type Role,
   } from './lib/api/catalog';
   import { artworkSrc, hue, initials, roleLabel } from './lib/format';
   import Icon from './lib/components/Icon.svelte';
   import MovieCard from './lib/components/MovieCard.svelte';
   import PersonCard from './lib/components/PersonCard.svelte';
+  import Logo from './lib/components/Logo.svelte';
+  import { readSaved, toggleSaved, writeSaved } from './lib/state/saved';
 
-  type Tab = 'movies' | 'people' | 'search';
+  type Tab = 'movies' | 'people' | 'saved' | 'search';
   let tab: Tab = 'movies';
   let query = '';
   let roleFilter: Role | '' = '';
@@ -17,6 +20,8 @@
   let movies: Page<Movie> | null = null;
   let people: Page<Person> | null = null;
   let results: { movies: Movie[]; people: Person[] } | null = null;
+  let savedIds: string[] = readSaved();
+  let savedMovies: Movie[] | null = null;
   let loading = false;
   let busy = false;
   let error = '';
@@ -31,6 +36,8 @@
   let personForm: PersonInput = { name: '', bio: '', birthDate: '' };
   let genreText = '';
   let file: File | null = null;
+  let avatarFile: File | null = null;
+  let avatarPreview = '';
   let uploadPercent: number | null = null;
   let pickerQuery = '';
   let pickerPeople: Person[] = [];
@@ -44,7 +51,16 @@
     return { title: '', synopsis: '', releaseYear: new Date().getFullYear(), runtimeMinutes: 0, genres: [], credits: [] };
   }
   function message(e: unknown): string { return e instanceof Error ? e.message : 'Something went wrong. Please retry.'; }
-  function artwork(url: string): string { return url.startsWith('/') ? url : `/${url}`; }
+  function pickAvatar(next: File | null) {
+    if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    avatarFile = next;
+    avatarPreview = next ? URL.createObjectURL(next) : '';
+  }
+  function toggleSave(movie: Movie) {
+    savedIds = toggleSaved(savedIds, movie.id);
+    writeSaved(savedIds);
+    if (tab === 'saved' && !savedIds.includes(movie.id)) savedMovies = (savedMovies ?? []).filter(m => m.id !== movie.id);
+  }
 
   async function load() {
     const current = ++requestId;
@@ -56,6 +72,12 @@
       } else if (tab === 'people') {
         const data = await listPeople(query, page, roleFilter || null);
         if (current === requestId) people = data;
+      } else if (tab === 'saved') {
+        const data = await getMovies(savedIds);
+        if (current === requestId) {
+          savedMovies = data;
+          if (data.length !== savedIds.length) { savedIds = data.map(m => m.id); writeSaved(savedIds); } // drop deleted movies
+        }
       } else {
         const data = query.trim() ? await search(query.trim()) : { movies: [], people: [] };
         if (current === requestId) results = data;
@@ -103,6 +125,7 @@
     editingPerson = person;
     personForm = person ? { name: person.name, bio: person.bio, birthDate: person.birthDate ?? '' }
       : { name: '', bio: '', birthDate: '' };
+    pickAvatar(null); uploadPercent = null;
     error = ''; modal = 'person';
   }
   function addCredit() {
@@ -115,9 +138,8 @@
     error = ''; notice = '';
     if (!movieForm.title.trim()) { error = 'Enter a movie title.'; return; }
     if (movieForm.credits.some(c => !c.personId)) { error = 'Choose a person for every credit.'; return; }
-    if (file && (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024)) {
-      error = 'Artwork must be a JPEG, PNG or WebP image smaller than 5 MB.'; return;
-    }
+    const artworkProblem = imageProblem(file);
+    if (artworkProblem) { error = artworkProblem; return; }
     if (new Set(movieForm.credits.map(c => `${c.personId}:${c.role}`)).size !== movieForm.credits.length) {
       error = 'Each person can only have one credit per role.'; return;
     }
@@ -140,12 +162,20 @@
   async function submitPerson() {
     error = ''; notice = '';
     if (!personForm.name.trim()) { error = 'Enter a name.'; return; }
+    const avatarProblem = imageProblem(avatarFile);
+    if (avatarProblem) { error = avatarProblem; return; }
     busy = true;
     try {
-      await savePerson({ ...personForm, name: personForm.name.trim() }, editingPerson?.id);
+      const saved = await savePerson({ ...personForm, name: personForm.name.trim() }, editingPerson?.id);
+      editingPerson = saved; // Retain the ID if the avatar upload fails, so retry cannot create a duplicate.
+      if (avatarFile) {
+        uploadPercent = 0;
+        await uploadAvatar(saved.id, avatarFile, n => uploadPercent = n);
+        pickAvatar(null);
+      }
       modal = null; notice = 'Person saved successfully.'; void load();
     } catch (e) { error = message(e); }
-    finally { busy = false; }
+    finally { busy = false; uploadPercent = null; }
   }
   async function remove(kind: 'movie' | 'person', id: string, name: string) {
     if (!confirm(`Delete ${name}? This cannot be undone${kind === 'person' ? ' and will remove their movie credits' : ''}.`)) return;
@@ -154,6 +184,7 @@
       const deleted = kind === 'movie' ? await deleteMovie(id) : await deletePerson(id);
       if (!deleted) throw new Error(`${name} no longer exists. Refresh the list.`);
       notice = `${name} deleted.`;
+      if (kind === 'movie' && savedIds.includes(id)) { savedIds = savedIds.filter(s => s !== id); writeSaved(savedIds); }
       if (page > 0 && (kind === 'movie' ? movies?.items.length : people?.items.length) === 1) page--;
       await load();
     } catch (e) { error = message(e); }
@@ -171,10 +202,11 @@
 
 <header class="topbar">
   <div class="wrap header-inner">
-    <div class="brand"><span class="brand-mark"><Icon name="film" size={20} /></span> MovieHub</div>
+    <div class="brand"><Logo size={34} /> MovieHub</div>
     <nav class="tabs" aria-label="Catalog sections">
       <button class:active={tab === 'movies'} aria-current={tab === 'movies' ? 'page' : undefined} onclick={() => switchTab('movies')}><Icon name="film" size={18} /><span>Movies</span></button>
       <button class:active={tab === 'people'} aria-current={tab === 'people' ? 'page' : undefined} onclick={() => switchTab('people')}><Icon name="users" size={18} /><span>Cast & creators</span></button>
+      <button class:active={tab === 'saved'} aria-current={tab === 'saved' ? 'page' : undefined} onclick={() => switchTab('saved')}><span class="tab-icon"><Icon name="bookmark" size={18} />{#if savedIds.length}<b class="count">{savedIds.length}</b>{/if}</span><span>Saved</span></button>
       <button class:active={tab === 'search'} aria-current={tab === 'search' ? 'page' : undefined} onclick={() => switchTab('search')}><Icon name="compass" size={18} /><span>Explore all</span></button>
     </nav>
   </div>
@@ -189,9 +221,10 @@
     <div class="stats" aria-label="Collection summary">
       <div class="stat"><strong>{movies?.total ?? '–'}</strong><span>Movies</span></div>
       <div class="stat"><strong>{people?.total ?? '–'}</strong><span>People</span></div>
+      <div class="stat"><strong>{savedIds.length}</strong><span>Saved</span></div>
     </div>
   </section>
-  <div class="toolbar">
+  {#if tab !== 'saved'}<div class="toolbar">
     <div class="searchbox"><Icon name="search" size={19} /><input aria-label="Search" placeholder={tab === 'movies' ? 'Search movies, genres, cast…' : tab === 'people' ? 'Search cast & creators…' : 'Search everything…'} bind:value={query} oninput={updateQuery} /></div>
     {#if tab === 'people'}
       <select aria-label="Filter by role" bind:value={roleFilter} onchange={() => { page = 0; void load(); }}>
@@ -199,7 +232,7 @@
       </select>
     {/if}
     {#if tab !== 'search'}<button class="primary add-btn" disabled={busy} onclick={() => tab === 'movies' ? openMovie() : openPerson()}><Icon name="plus" size={18} /><span>Add {tab === 'movies' ? 'movie' : 'person'}</span></button>{/if}
-  </div>
+  </div>{/if}
   {#if notice}<p class="alert success" role="status">{notice}</p>{/if}
   {#if error && !modal}<div class="alert failure" role="alert"><span>{error}</span> <button onclick={() => void load()}>Retry</button></div>{/if}
   {#if loading}
@@ -212,7 +245,16 @@
     {#if movies && (!loading || movies.items.length)}
       {#if !movies.items.length}<p class="empty">No movies found. Try another search or add your first movie.</p>{/if}
       <div class="grid">{#each movies.items as movie (movie.id)}
-        <MovieCard {movie} {busy} onedit={() => openMovie(movie)} ondelete={() => void remove('movie', movie.id, movie.title)} />
+        <MovieCard {movie} {busy} saved={savedIds.includes(movie.id)} ontoggle={() => toggleSave(movie)} onedit={() => openMovie(movie)} ondelete={() => void remove('movie', movie.id, movie.title)} />
+      {/each}</div>
+    {/if}
+  {:else if tab === 'saved'}
+    <div class="section-heading"><h2>Saved movies</h2><span>{savedIds.length} saved</span></div>
+    {#if !savedIds.length}
+      <p class="empty">Nothing saved yet. Tap the bookmark on any movie to keep it here for later.</p>
+    {:else if savedMovies && (!loading || savedMovies.length)}
+      <div class="grid">{#each savedMovies as movie (movie.id)}
+        <MovieCard {movie} {busy} saved={true} ontoggle={() => toggleSave(movie)} onedit={() => openMovie(movie)} ondelete={() => void remove('movie', movie.id, movie.title)} />
       {/each}</div>
     {/if}
   {:else if tab === 'people'}
@@ -231,11 +273,11 @@
       <div class="search-results"><h3>Movies <span>{results.movies.length}</span></h3>
         {#each results.movies as movie (movie.id)}<div class="result-row"><div class="result-thumb" style="--hue: {hue(movie.title)}">{#if movie.artworkUrl}<img src={artworkSrc(movie.artworkUrl)} alt="" />{:else}<Icon name="film" size={20} />{/if}</div><div class="result-text"><strong>{movie.title}</strong><p>{movie.releaseYear} · {movie.genres.join(', ') || 'Film'}</p></div><button onclick={() => { const title = movie.title; switchTab('movies'); query = title; void load(); }}>View</button></div>{/each}
         <h3>People <span>{results.people.length}</span></h3>
-        {#each results.people as person (person.id)}<div class="result-row"><div class="result-thumb round" style="--hue: {hue(person.name)}">{initials(person.name)}</div><div class="result-text"><strong>{person.name}</strong><p>{person.filmography.length} film credits</p></div><button onclick={() => { const name = person.name; switchTab('people'); query = name; void load(); }}>View</button></div>{/each}
+        {#each results.people as person (person.id)}<div class="result-row"><div class="result-thumb round" style="--hue: {hue(person.name)}">{#if person.avatarUrl}<img src={artworkSrc(person.avatarUrl)} alt="" />{:else}{initials(person.name)}{/if}</div><div class="result-text"><strong>{person.name}</strong><p>{person.filmography.length} film credits</p></div><button onclick={() => { const name = person.name; switchTab('people'); query = name; void load(); }}>View</button></div>{/each}
       </div>
     {/if}
   {/if}
-  {#if tab !== 'search'}
+  {#if tab === 'movies' || tab === 'people'}
     {@const listing = tab === 'movies' ? movies : people}
     {#if listing && listing.totalPages > 1}
       <div class="pagination"><button disabled={loading || page === 0} onclick={() => { page--; void load(); }}><Icon name="prev" size={16} /> Previous</button><span>Page {page + 1} of {listing.totalPages}</span><button disabled={loading || page + 1 >= listing.totalPages} onclick={() => { page++; void load(); }}>Next <Icon name="next" size={16} /></button></div>
@@ -269,7 +311,7 @@
             {#if !pickerPeople.length}<p class="hint">No people found. Add them in Cast & creators first.</p>{/if}
           {/if}
         </div>
-        <div class="form-section"><h3>Artwork</h3>{#if editingMovie?.artworkUrl}<img class="art-preview" src={artwork(editingMovie.artworkUrl)} alt="Current artwork" />{/if}
+        <div class="form-section"><h3>Artwork</h3>{#if editingMovie?.artworkUrl}<img class="art-preview" src={artworkSrc(editingMovie.artworkUrl)} alt="Current artwork" />{/if}
           <label>Upload image <input type="file" accept="image/jpeg,image/png,image/webp" onchange={(event) => file = event.currentTarget.files?.[0] ?? null} /><small>JPEG, PNG or WebP · maximum 5 MB</small></label>
           {#if uploadPercent !== null}<div role="status">Uploading artwork: {uploadPercent}% <progress value={uploadPercent} max="100"></progress></div>{/if}
         </div>
@@ -277,6 +319,15 @@
       </form>
     {:else}
       <form onsubmit={(event) => { event.preventDefault(); void submitPerson(); }}>
+        <div class="avatar-field">
+          <div class="avatar large" style="--hue: {hue(personForm.name || 'new')}">
+            {#if avatarPreview}<img src={avatarPreview} alt="Selected preview" />
+            {:else if editingPerson?.avatarUrl}<img src={artworkSrc(editingPerson.avatarUrl)} alt="Current avatar" />
+            {:else}<span aria-hidden="true">{initials(personForm.name)}</span>{/if}
+          </div>
+          <label>Photo <input type="file" accept="image/jpeg,image/png,image/webp" onchange={(event) => pickAvatar(event.currentTarget.files?.[0] ?? null)} /><small>JPEG, PNG or WebP · maximum 5 MB</small></label>
+        </div>
+        {#if uploadPercent !== null}<div role="status">Uploading photo: {uploadPercent}% <progress value={uploadPercent} max="100"></progress></div>{/if}
         <label>Name <input required maxlength="200" bind:value={personForm.name} /></label>
         <label>Birth date <input type="date" max={new Date().toISOString().slice(0, 10)} bind:value={personForm.birthDate} /></label>
         <label>Biography <textarea maxlength="4000" rows="5" bind:value={personForm.bio}></textarea></label>

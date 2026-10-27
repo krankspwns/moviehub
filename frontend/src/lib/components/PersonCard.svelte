@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Person } from '../api/catalog';
-  import { hue, initials, roleLabel } from '../format';
+  import { artworkSrc, hue, initials, roleLabel } from '../format';
   import IconButton from './IconButton.svelte';
 
   let { person, busy = false, onedit, ondelete }: {
@@ -10,12 +10,19 @@
     ondelete: () => void;
   } = $props();
 
+  let imageFailed = $state(false);
   const roles = $derived([...new Set(person.filmography.map((f) => f.role))]);
   const titles = $derived([...new Set(person.filmography.map((f) => f.title))]);
 </script>
 
 <article class="card person-card">
-  <div class="avatar" style="--hue: {hue(person.name)}" aria-hidden="true">{initials(person.name)}</div>
+  <div class="avatar" style="--hue: {hue(person.name)}">
+    {#if person.avatarUrl && !imageFailed}
+      <img src={artworkSrc(person.avatarUrl)} alt="Photo of {person.name}" loading="lazy" onerror={() => (imageFailed = true)} />
+    {:else}
+      <span aria-hidden="true">{initials(person.name)}</span>
+    {/if}
+  </div>
   <div class="card-body">
     <h3 title={person.name}>{person.name}</h3>
     <p class="meta">{person.birthDate ? `Born ${person.birthDate}` : 'Birth date unknown'}</p>

@@ -16,7 +16,7 @@ const movie: Movie = {
   ],
 };
 const person: Person = {
-  id: 'p2', name: 'Amy Adams', bio: '', birthDate: null,
+  id: 'p2', name: 'Amy Adams', bio: '', birthDate: null, avatarUrl: null,
   filmography: [{ movieId: 'm1', title: 'Arrival', role: 'ACTOR' }],
 };
 
@@ -49,6 +49,22 @@ describe('MovieCard', () => {
     expect(screen.getByRole('img', { name: 'No artwork available' })).toBeInTheDocument();
   });
 
+  it('offers a save toggle that reflects the saved state', async () => {
+    const ontoggle = vi.fn();
+    const { rerender } = render(MovieCard, { movie, onedit: vi.fn(), ondelete: vi.fn(), ontoggle });
+    const save = screen.getByRole('button', { name: 'Save Arrival' });
+    expect(save).toHaveAttribute('aria-pressed', 'false');
+    await fireEvent.click(save);
+    expect(ontoggle).toHaveBeenCalledOnce();
+    await rerender({ saved: true });
+    expect(screen.getByRole('button', { name: 'Remove Arrival from saved' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('hides the save toggle when no handler is provided', () => {
+    render(MovieCard, { movie, onedit: vi.fn(), ondelete: vi.fn() });
+    expect(screen.queryByRole('button', { name: /Save Arrival/ })).not.toBeInTheDocument();
+  });
+
   it('handles unknown runtime', () => {
     render(MovieCard, { movie: { ...movie, runtimeMinutes: 0 }, onedit: vi.fn(), ondelete: vi.fn() });
     expect(screen.getByText(/Runtime unknown/)).toBeInTheDocument();
@@ -65,6 +81,13 @@ describe('PersonCard', () => {
     await fireEvent.click(screen.getByRole('button', { name: 'Delete Amy Adams' }));
     expect(onedit).toHaveBeenCalledOnce();
     expect(ondelete).toHaveBeenCalledOnce();
+  });
+
+  it('shows the uploaded avatar and falls back to initials when it fails to load', async () => {
+    render(PersonCard, { person: { ...person, avatarUrl: '/api/people/p2/avatar?v=1' }, onedit: vi.fn(), ondelete: vi.fn() });
+    await fireEvent.error(screen.getByRole('img', { name: 'Photo of Amy Adams' }));
+    expect(screen.queryByRole('img', { name: 'Photo of Amy Adams' })).not.toBeInTheDocument();
+    expect(screen.getByText('AA')).toBeInTheDocument();
   });
 });
 
