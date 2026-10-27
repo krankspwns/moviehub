@@ -4,6 +4,7 @@
     deleteMovie,
     deletePerson,
     getMovies,
+    getPeople,
     listMovies,
     listPeople,
     roles,
@@ -23,7 +24,7 @@
   import PersonDetails from './lib/components/PersonDetails.svelte';
   import PersonEditor from './lib/components/PersonEditor.svelte';
   import SearchResults from './lib/components/SearchResults.svelte';
-  import { readSaved, toggleSaved, writeSaved } from './lib/state/saved';
+  import { readSaved, readSavedPeople, toggleSaved, writeSaved, writeSavedPeople } from './lib/state/saved';
   import { applyTheme, nextTheme, readTheme, writeTheme, type Theme } from './lib/state/theme';
 
   // Listing state
@@ -35,6 +36,7 @@
   let people = $state<Page<Person> | null>(null);
   let results = $state<{ movies: Movie[]; people: Person[] } | null>(null);
   let savedMovies = $state<Movie[] | null>(null);
+  let savedPeople = $state<Person[] | null>(null);
   let loading = $state(false);
   let busy = $state(false);
   let error = $state('');
@@ -44,6 +46,8 @@
 
   // Preferences
   let savedIds = $state<string[]>(readSaved());
+  let savedPeopleIds = $state<string[]>(readSavedPeople());
+  const savedTotal = $derived(savedIds.length + savedPeopleIds.length);
   const initialTheme: Theme = readTheme();
   applyTheme(initialTheme);
   let theme = $state<Theme>(initialTheme);
@@ -67,13 +71,19 @@
         const data = await listPeople(query, page, roleFilter || null);
         if (current === requestId) people = data;
       } else if (tab === 'saved') {
-        const data = await getMovies(savedIds);
+        const [movieData, peopleData] = await Promise.all([getMovies(savedIds), getPeople(savedPeopleIds)]);
         if (current === requestId) {
-          savedMovies = data;
-          if (data.length !== savedIds.length) {
-            savedIds = data.map((m) => m.id);
+          savedMovies = movieData;
+          savedPeople = peopleData;
+          // drop anything that was deleted in the meantime
+          if (movieData.length !== savedIds.length) {
+            savedIds = movieData.map((m) => m.id);
             writeSaved(savedIds);
-          } // drop deleted movies
+          }
+          if (peopleData.length !== savedPeopleIds.length) {
+            savedPeopleIds = peopleData.map((p) => p.id);
+            writeSavedPeople(savedPeopleIds);
+          }
         }
       } else {
         const data = query.trim() ? await search(query.trim()) : { movies: [], people: [] };
@@ -120,6 +130,16 @@
     applyTheme(theme);
     writeTheme(theme);
   }
+  function goHome() {
+    switchTab('movies');
+    window.scrollTo({ top: 0 });
+  }
+  function toggleSavePerson(person: Person) {
+    savedPeopleIds = toggleSaved(savedPeopleIds, person.id);
+    writeSavedPeople(savedPeopleIds);
+    if (tab === 'saved' && !savedPeopleIds.includes(person.id))
+      savedPeople = (savedPeople ?? []).filter((p) => p.id !== person.id);
+  }
   function toggleSave(movie: Movie) {
     savedIds = toggleSaved(savedIds, movie.id);
     writeSaved(savedIds);
@@ -162,6 +182,10 @@
         savedIds = savedIds.filter((s) => s !== id);
         writeSaved(savedIds);
       }
+      if (kind === 'person' && savedPeopleIds.includes(id)) {
+        savedPeopleIds = savedPeopleIds.filter((s) => s !== id);
+        writeSavedPeople(savedPeopleIds);
+      }
       if (page > 0 && (kind === 'movie' ? movies?.items.length : people?.items.length) === 1) page--;
       await load();
     } catch (e) {
@@ -179,7 +203,7 @@
   <meta name="description" content="Browse and manage movies, artwork, cast and creators." />
 </svelte:head>
 
-<Header {tab} savedCount={savedIds.length} {theme} onswitch={switchTab} ontheme={toggleTheme} />
+<Header {tab} savedCount={savedTotal} {theme} onswitch={switchTab} ontheme={toggleTheme} onhome={goHome} />
 <main class="wrap">
   <section class="hero">
     <div>
@@ -190,7 +214,7 @@
     <div class="stats" aria-label="Collection summary">
       <div class="stat"><strong>{movies?.total ?? '–'}</strong><span>Movies</span></div>
       <div class="stat"><strong>{people?.total ?? '–'}</strong><span>People</span></div>
-      <div class="stat"><strong>{savedIds.length}</strong><span>Saved</span></div>
+      <div class="stat"><strong>{savedTotal}</strong><span>Saved</span></div>
     </div>
   </section>
 
@@ -264,25 +288,44 @@
     {/if}
   {:else if tab === 'saved'}
     <div class="section-heading">
-      <h2>Saved movies</h2>
-      <span>{savedIds.length} saved</span>
+      <h2>Saved</h2>
+      <span>{savedTotal} saved</span>
     </div>
-    {#if !savedIds.length}
-      <p class="empty">Nothing saved yet. Tap the bookmark on any movie to keep it here for later.</p>
-    {:else if savedMovies && (!loading || savedMovies.length)}
-      <div class="grid">
-        {#each savedMovies as movie (movie.id)}
-          <MovieCard
-            {movie}
-            {busy}
-            saved={true}
-            ontoggle={() => toggleSave(movie)}
-            onopen={() => (viewMovie = movie)}
-            onedit={() => openMovie(movie)}
-            ondelete={() => void remove('movie', movie.id, movie.title)}
-          />
-        {/each}
-      </div>
+    {#if !savedTotal}
+      <p class="empty">Nothing saved yet. Tap the bookmark on any movie or person to keep it here for later.</p>
+    {:else}
+      {#if savedMovies?.length}
+        <h3 class="saved-heading">Movies <span class="hint">({savedMovies.length})</span></h3>
+        <div class="grid">
+          {#each savedMovies as movie (movie.id)}
+            <MovieCard
+              {movie}
+              {busy}
+              saved={true}
+              ontoggle={() => toggleSave(movie)}
+              onopen={() => (viewMovie = movie)}
+              onedit={() => openMovie(movie)}
+              ondelete={() => void remove('movie', movie.id, movie.title)}
+            />
+          {/each}
+        </div>
+      {/if}
+      {#if savedPeople?.length}
+        <h3 class="saved-heading">Cast & creators <span class="hint">({savedPeople.length})</span></h3>
+        <div class="grid people-grid">
+          {#each savedPeople as person (person.id)}
+            <PersonCard
+              {person}
+              {busy}
+              saved={true}
+              ontoggle={() => toggleSavePerson(person)}
+              onopen={() => (viewPerson = person)}
+              onedit={() => openPerson(person)}
+              ondelete={() => void remove('person', person.id, person.name)}
+            />
+          {/each}
+        </div>
+      {/if}
     {/if}
   {:else if tab === 'people'}
     <div class="section-heading">
@@ -296,6 +339,8 @@
           <PersonCard
             {person}
             {busy}
+            saved={savedPeopleIds.includes(person.id)}
+            ontoggle={() => toggleSavePerson(person)}
             onopen={() => (viewPerson = person)}
             onedit={() => openPerson(person)}
             ondelete={() => void remove('person', person.id, person.name)}
@@ -372,6 +417,8 @@
         {@const shown = viewPerson}
         <PersonDetails
           person={shown}
+          saved={savedPeopleIds.includes(shown.id)}
+          ontoggle={() => toggleSavePerson(shown)}
           onclose={closeDetail}
           onedit={() => {
             closeDetail();

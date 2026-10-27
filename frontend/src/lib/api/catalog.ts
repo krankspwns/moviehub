@@ -138,19 +138,21 @@ export async function deletePerson(id: string): Promise<boolean> {
     .deletePerson;
 }
 
-/** Fetches several movies by id in one round trip; ids that no longer exist are omitted. Order is preserved. */
-export async function getMovies(ids: string[]): Promise<Movie[]> {
+/** Fetches several records by id in one round trip; missing ids are omitted. Order is preserved. */
+async function getByIds<T>(field: 'movie' | 'person', fields: string, ids: string[]): Promise<T[]> {
   if (!ids.length) return [];
   // Aliases and variable names are generated from the index only; ids always travel as variables.
   const declarations = ids.map((_, i) => `$id${i}: ID!`).join(', ');
-  const selections = ids.map((_, i) => `m${i}: movie(id: $id${i}) { ${movieFields} }`).join(' ');
+  const selections = ids.map((_, i) => `r${i}: ${field}(id: $id${i}) { ${fields} }`).join(' ');
   const variables: Record<string, unknown> = {};
   ids.forEach((id, i) => {
     variables[`id${i}`] = id;
   });
-  const data = await graphql<Record<string, Movie | null>>(`query (${declarations}) { ${selections} }`, variables);
-  return ids.map((_, i) => data[`m${i}`]).filter((movie): movie is Movie => movie != null);
+  const data = await graphql<Record<string, T | null>>(`query (${declarations}) { ${selections} }`, variables);
+  return ids.map((_, i) => data[`r${i}`]).filter((item): item is T => item != null);
 }
+export const getMovies = (ids: string[]): Promise<Movie[]> => getByIds<Movie>('movie', movieFields, ids);
+export const getPeople = (ids: string[]): Promise<Person[]> => getByIds<Person>('person', personFields, ids);
 
 function uploadImage(path: string, file: File, onProgress: (percent: number) => void): Promise<void> {
   return new Promise((resolve, reject) => {

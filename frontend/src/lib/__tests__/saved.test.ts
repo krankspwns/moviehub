@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { readSaved, toggleSaved, writeSaved } from '../state/saved';
+import { readSaved, readSavedPeople, toggleSaved, writeSaved, writeSavedPeople } from '../state/saved';
 
 const storageWith = (value: string | null) => ({ getItem: () => value });
 
@@ -32,5 +32,13 @@ describe('saved list', () => {
     const ok = vi.fn();
     writeSaved(['a', 'b'], { setItem: ok });
     expect(ok).toHaveBeenCalledWith('moviehub.saved.v1', '["a","b"]');
+  });
+
+  it('keeps saved people under their own key', () => {
+    const ok = vi.fn();
+    writeSavedPeople(['p1'], { setItem: ok });
+    expect(ok).toHaveBeenCalledWith('moviehub.saved.people.v1', '["p1"]');
+    expect(readSavedPeople(storageWith('["p1","p1"]'))).toEqual(['p1']);
+    expect(readSavedPeople(null)).toEqual([]);
   });
 });

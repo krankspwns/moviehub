@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   getMovies,
+  getPeople,
   graphql,
   imageProblem,
   listMovies,
@@ -105,7 +106,7 @@ describe('avatars and saved lookups', () => {
   it('fetches saved movies in one query, keeps order and skips deleted ones', async () => {
     mockFetch.mockResolvedValue({
       ok: true,
-      json: async () => ({ data: { m0: { id: 'a' }, m1: null, m2: { id: 'c' } } }),
+      json: async () => ({ data: { r0: { id: 'a' }, r1: null, r2: { id: 'c' } } }),
     });
     const movies = await getMovies(['a', 'gone', 'c']);
     expect(movies.map((m) => m.id)).toEqual(['a', 'c']);
@@ -113,6 +114,15 @@ describe('avatars and saved lookups', () => {
     expect(body.variables).toEqual({ id0: 'a', id1: 'gone', id2: 'c' });
     expect(body.query).not.toContain('gone');
     expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('fetches saved people through the person query', async () => {
+    mockFetch.mockResolvedValue({ ok: true, json: async () => ({ data: { r0: null, r1: { id: 'p2' } } }) });
+    const people = await getPeople(['gone', 'p2']);
+    expect(people.map((p) => p.id)).toEqual(['p2']);
+    expect(JSON.parse(mockFetch.mock.calls[mockFetch.mock.calls.length - 1][1].body).query).toContain(
+      'person(id: $id1)',
+    );
   });
 
   it('does not call the server for an empty saved list', async () => {

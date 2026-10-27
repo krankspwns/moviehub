@@ -6,14 +6,18 @@
   let {
     person,
     busy = false,
+    saved = false,
     onopen,
     onedit,
     ondelete,
+    ontoggle,
   }: {
     person: Person;
     busy?: boolean;
+    saved?: boolean;
     onedit: () => void;
     ondelete: () => void;
+    ontoggle?: () => void;
     onopen?: () => void;
   } = $props();
 
@@ -57,6 +61,14 @@
     {/if}
   </div>
   <div class="card-actions inline">
+    {#if ontoggle}
+      <IconButton
+        icon="bookmark"
+        pressed={saved}
+        label={saved ? `Remove ${person.name} from saved` : `Save ${person.name}`}
+        onclick={ontoggle}
+      />
+    {/if}
     <IconButton icon="edit" label="Edit {person.name}" disabled={busy} onclick={onedit} />
     <IconButton icon="trash" label="Delete {person.name}" variant="danger" disabled={busy} onclick={ondelete} />
   </div>

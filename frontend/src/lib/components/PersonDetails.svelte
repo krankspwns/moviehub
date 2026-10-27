@@ -2,8 +2,15 @@
   import type { Person } from '../api/catalog';
   import { artworkSrc, hue, initials, roleLabel } from '../format';
   import Icon from './Icon.svelte';
+  import IconButton from './IconButton.svelte';
 
-  let { person, onclose, onedit }: { person: Person; onclose: () => void; onedit: () => void } = $props();
+  let {
+    person,
+    saved = false,
+    onclose,
+    onedit,
+    ontoggle,
+  }: { person: Person; saved?: boolean; onclose: () => void; onedit: () => void; ontoggle?: () => void } = $props();
 
   let imageFailed = $state(false);
   const roles = $derived([...new Set(person.filmography.map((f) => f.role))]);
@@ -26,6 +33,14 @@
       </div>{/if}
     <p class="detail-text">{person.bio || 'No biography yet.'}</p>
     <div class="detail-actions">
+      {#if ontoggle}
+        <IconButton
+          icon="bookmark"
+          pressed={saved}
+          label={saved ? `Remove ${person.name} from saved` : `Save ${person.name}`}
+          onclick={ontoggle}
+        />
+      {/if}
       <button type="button" class="primary" onclick={onedit}
         ><Icon name="edit" size={16} /><span>Edit person</span></button
       >
