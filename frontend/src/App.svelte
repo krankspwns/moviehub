@@ -4,6 +4,10 @@
     deleteMovie, deletePerson, listMovies, listPeople, roles, saveMovie, savePerson, search, uploadArtwork,
     type CreditInput, type Movie, type MovieInput, type Page, type Person, type PersonInput, type Role,
   } from './lib/api/catalog';
+  import { artworkSrc, hue, initials, roleLabel } from './lib/format';
+  import Icon from './lib/components/Icon.svelte';
+  import MovieCard from './lib/components/MovieCard.svelte';
+  import PersonCard from './lib/components/PersonCard.svelte';
 
   type Tab = 'movies' | 'people' | 'search';
   let tab: Tab = 'movies';
@@ -166,42 +170,49 @@
 </svelte:head>
 
 <header class="topbar">
-  <div class="wrap header-inner"><div class="brand"><span class="brand-mark">▶</span> MovieHub</div><span class="header-note">YOUR FILM COLLECTION</span></div>
+  <div class="wrap header-inner">
+    <div class="brand"><span class="brand-mark"><Icon name="film" size={20} /></span> MovieHub</div>
+    <nav class="tabs" aria-label="Catalog sections">
+      <button class:active={tab === 'movies'} aria-current={tab === 'movies' ? 'page' : undefined} onclick={() => switchTab('movies')}><Icon name="film" size={18} /><span>Movies</span></button>
+      <button class:active={tab === 'people'} aria-current={tab === 'people' ? 'page' : undefined} onclick={() => switchTab('people')}><Icon name="users" size={18} /><span>Cast & creators</span></button>
+      <button class:active={tab === 'search'} aria-current={tab === 'search' ? 'page' : undefined} onclick={() => switchTab('search')}><Icon name="compass" size={18} /><span>Explore all</span></button>
+    </nav>
+  </div>
 </header>
 <main class="wrap">
-  <div class="hero"><div><p class="eyebrow">THE COLLECTION</p><h1>Stories worth keeping.</h1><p class="subhead">Explore films and the people who bring them to life.</p></div></div>
-  <nav class="tabs" aria-label="Catalog sections">
-    <button class:active={tab === 'movies'} onclick={() => switchTab('movies')}>Movies</button>
-    <button class:active={tab === 'people'} onclick={() => switchTab('people')}>Cast & creators</button>
-    <button class:active={tab === 'search'} onclick={() => switchTab('search')}>Explore all</button>
-  </nav>
+  <section class="hero">
+    <div>
+      <p class="eyebrow">Your film collection</p>
+      <h1>Stories worth <em>keeping</em>.</h1>
+      <p class="subhead">Explore films and the people who bring them to life.</p>
+    </div>
+    <div class="stats" aria-label="Collection summary">
+      <div class="stat"><strong>{movies?.total ?? '–'}</strong><span>Movies</span></div>
+      <div class="stat"><strong>{people?.total ?? '–'}</strong><span>People</span></div>
+    </div>
+  </section>
   <div class="toolbar">
-    <div class="searchbox"><span aria-hidden="true">⌕</span><input aria-label="Search" placeholder={tab === 'movies' ? 'Search movies, genres, cast…' : tab === 'people' ? 'Search cast & creators…' : 'Search everything…'} bind:value={query} oninput={updateQuery} /></div>
+    <div class="searchbox"><Icon name="search" size={19} /><input aria-label="Search" placeholder={tab === 'movies' ? 'Search movies, genres, cast…' : tab === 'people' ? 'Search cast & creators…' : 'Search everything…'} bind:value={query} oninput={updateQuery} /></div>
     {#if tab === 'people'}
       <select aria-label="Filter by role" bind:value={roleFilter} onchange={() => { page = 0; void load(); }}>
-        <option value="">All roles</option>{#each roles as role}<option value={role}>{role.charAt(0) + role.slice(1).toLowerCase()}</option>{/each}
+        <option value="">All roles</option>{#each roles as role}<option value={role}>{roleLabel(role)}</option>{/each}
       </select>
     {/if}
-    {#if tab !== 'search'}<button class="primary" disabled={busy} onclick={() => tab === 'movies' ? openMovie() : openPerson()}>+ Add {tab === 'movies' ? 'movie' : 'person'}</button>{/if}
+    {#if tab !== 'search'}<button class="primary add-btn" disabled={busy} onclick={() => tab === 'movies' ? openMovie() : openPerson()}><Icon name="plus" size={18} /><span>Add {tab === 'movies' ? 'movie' : 'person'}</span></button>{/if}
   </div>
   {#if notice}<p class="alert success" role="status">{notice}</p>{/if}
-  {#if error && !modal}<div class="alert failure" role="alert">{error} <button onclick={() => void load()}>Retry</button></div>{/if}
-  {#if loading}<p class="loading" role="status">Loading {tab === 'search' ? 'results' : tab}…</p>{/if}
+  {#if error && !modal}<div class="alert failure" role="alert"><span>{error}</span> <button onclick={() => void load()}>Retry</button></div>{/if}
+  {#if loading}
+    <p class="sr-only" role="status">Loading {tab === 'search' ? 'results' : tab}…</p>
+    <div class="grid skeletons" aria-hidden="true">{#each [1, 2, 3, 4] as n (n)}<div class="skeleton"></div>{/each}</div>
+  {/if}
 
   {#if tab === 'movies'}
     <div class="section-heading"><h2>Movies</h2>{#if movies}<span>{movies.total} titles</span>{/if}</div>
     {#if movies && (!loading || movies.items.length)}
       {#if !movies.items.length}<p class="empty">No movies found. Try another search or add your first movie.</p>{/if}
       <div class="grid">{#each movies.items as movie (movie.id)}
-        <article class="card movie-card">
-          <div class="poster">{#if movie.artworkUrl}<img src={artwork(movie.artworkUrl)} alt="Artwork for {movie.title}" loading="lazy" />{:else}<span aria-label="No artwork available">▶</span>{/if}</div>
-          <div class="card-body"><p class="meta">{movie.releaseYear}{movie.runtimeMinutes ? ` · ${movie.runtimeMinutes} min` : ''}</p><h3>{movie.title}</h3>
-            {#if movie.genres.length}<p class="tags">{movie.genres.join(' · ')}</p>{/if}
-            {#if movie.synopsis}<p class="synopsis">{movie.synopsis}</p>{/if}
-            {#if movie.credits.length}<p class="credit-line"><strong>Credits</strong> {movie.credits.map(c => `${c.personName} (${c.role.toLowerCase()}${c.characterName ? ` as ${c.characterName}` : ''})`).join(', ')}</p>{/if}
-            <div class="actions"><button disabled={busy} onclick={() => openMovie(movie)}>Edit & artwork</button><button class="danger" disabled={busy} onclick={() => void remove('movie', movie.id, movie.title)}>Delete</button></div>
-          </div>
-        </article>
+        <MovieCard {movie} {busy} onedit={() => openMovie(movie)} ondelete={() => void remove('movie', movie.id, movie.title)} />
       {/each}</div>
     {/if}
   {:else if tab === 'people'}
@@ -209,12 +220,7 @@
     {#if people && (!loading || people.items.length)}
       {#if !people.items.length}<p class="empty">No people found. Try another search or add someone.</p>{/if}
       <div class="grid people-grid">{#each people.items as person (person.id)}
-        <article class="card person-card"><div class="avatar">{person.name.charAt(0).toUpperCase()}</div><div class="card-body">
-          <h3>{person.name}</h3>{#if person.birthDate}<p class="meta">Born {person.birthDate}</p>{/if}
-          {#if person.bio}<p class="synopsis">{person.bio}</p>{/if}
-          {#if person.filmography.length}<p class="credit-line"><strong>Filmography</strong> {person.filmography.map(f => `${f.title} (${f.role.toLowerCase()})`).join(', ')}</p>{/if}
-          <div class="actions"><button disabled={busy} onclick={() => openPerson(person)}>Edit</button><button class="danger" disabled={busy} onclick={() => void remove('person', person.id, person.name)}>Delete</button></div>
-        </div></article>
+        <PersonCard {person} {busy} onedit={() => openPerson(person)} ondelete={() => void remove('person', person.id, person.name)} />
       {/each}</div>
     {/if}
   {:else}
@@ -223,23 +229,23 @@
     {:else if results}
       {#if !results.movies.length && !results.people.length && !loading}<p class="empty">No matches found.</p>{/if}
       <div class="search-results"><h3>Movies <span>{results.movies.length}</span></h3>
-        {#each results.movies as movie}<div class="result-row"><div class="result-thumb">{#if movie.artworkUrl}<img src={artwork(movie.artworkUrl)} alt="" />{:else}▶{/if}</div><div><strong>{movie.title}</strong><p>{movie.releaseYear} · {movie.genres.join(', ') || 'Film'}</p></div><button onclick={() => { switchTab('movies'); query = movie.title; void load(); }}>View</button></div>{/each}
+        {#each results.movies as movie (movie.id)}<div class="result-row"><div class="result-thumb" style="--hue: {hue(movie.title)}">{#if movie.artworkUrl}<img src={artworkSrc(movie.artworkUrl)} alt="" />{:else}<Icon name="film" size={20} />{/if}</div><div class="result-text"><strong>{movie.title}</strong><p>{movie.releaseYear} · {movie.genres.join(', ') || 'Film'}</p></div><button onclick={() => { const title = movie.title; switchTab('movies'); query = title; void load(); }}>View</button></div>{/each}
         <h3>People <span>{results.people.length}</span></h3>
-        {#each results.people as person}<div class="result-row"><div class="result-thumb">{person.name.charAt(0)}</div><div><strong>{person.name}</strong><p>{person.filmography.length} film credits</p></div><button onclick={() => { switchTab('people'); query = person.name; void load(); }}>View</button></div>{/each}
+        {#each results.people as person (person.id)}<div class="result-row"><div class="result-thumb round" style="--hue: {hue(person.name)}">{initials(person.name)}</div><div class="result-text"><strong>{person.name}</strong><p>{person.filmography.length} film credits</p></div><button onclick={() => { const name = person.name; switchTab('people'); query = name; void load(); }}>View</button></div>{/each}
       </div>
     {/if}
   {/if}
   {#if tab !== 'search'}
     {@const listing = tab === 'movies' ? movies : people}
     {#if listing && listing.totalPages > 1}
-      <div class="pagination"><button disabled={loading || page === 0} onclick={() => { page--; void load(); }}>← Previous</button><span>Page {page + 1} of {listing.totalPages}</span><button disabled={loading || page + 1 >= listing.totalPages} onclick={() => { page++; void load(); }}>Next →</button></div>
+      <div class="pagination"><button disabled={loading || page === 0} onclick={() => { page--; void load(); }}><Icon name="prev" size={16} /> Previous</button><span>Page {page + 1} of {listing.totalPages}</span><button disabled={loading || page + 1 >= listing.totalPages} onclick={() => { page++; void load(); }}>Next <Icon name="next" size={16} /></button></div>
     {/if}
   {/if}
 </main>
 
 {#if modal}
   <div class="backdrop"><dialog open class="dialog" aria-modal="true" aria-label={modal === 'movie' ? 'Movie editor' : 'Person editor'}>
-    <div class="dialog-head"><h2>{modal === 'movie' ? editingMovie ? 'Edit movie' : 'Add a movie' : editingPerson ? 'Edit person' : 'Add a person'}</h2><button class="close" aria-label="Close" disabled={busy} onclick={() => { modal = null; error = ''; }}>×</button></div>
+    <div class="dialog-head"><h2>{modal === 'movie' ? editingMovie ? 'Edit movie' : 'Add a movie' : editingPerson ? 'Edit person' : 'Add a person'}</h2><button class="close" aria-label="Close" disabled={busy} onclick={() => { modal = null; error = ''; }}><Icon name="close" size={20} /></button></div>
     {#if error}<p class="alert failure" role="alert">{error}</p>{/if}
     {#if modal === 'movie'}
       <form onsubmit={(event) => { event.preventDefault(); void submitMovie(); }}>
@@ -279,6 +285,19 @@
     {/if}
   </dialog></div>
 {/if}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
