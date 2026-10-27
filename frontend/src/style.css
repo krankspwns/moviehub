@@ -1161,6 +1161,7 @@ progress {
   display: flex;
   flex-direction: column;
   gap: 18px;
+  margin-bottom: 22px; /* keep the Edit button clear of the first section divider */
 }
 .detail-poster {
   width: 150px;
@@ -1400,3 +1401,4 @@ textarea[aria-invalid='true'] {
   font-weight: 600;
   font-size: 0.8rem;
 }
+
