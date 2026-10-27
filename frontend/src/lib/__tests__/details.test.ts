@@ -50,7 +50,7 @@ describe('details popup', () => {
     expect(screen.getByText('as Hanna')).toBeInTheDocument();
     expect(screen.getByText('Robert De Niro')).toBeInTheDocument();
     await fireEvent.click(screen.getByRole('button', { name: 'Close details' }));
-    await fireEvent.click(screen.getByRole('button', { name: 'Edit movie' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Edit Movie' }));
     await fireEvent.click(screen.getByRole('button', { name: 'Save Heat' }));
     expect(onclose).toHaveBeenCalledOnce();
     expect(onedit).toHaveBeenCalledOnce();

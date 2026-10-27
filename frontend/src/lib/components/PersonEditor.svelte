@@ -74,7 +74,7 @@
 <div class="backdrop">
   <dialog open class="dialog" aria-modal="true" aria-label="Person editor">
     <div class="dialog-head">
-      <h2>{editing ? 'Edit person' : 'Add a person'}</h2>
+      <h2>{editing ? 'Edit Person' : 'Add Person'}</h2>
       <button class="close" aria-label="Close" disabled={busy} onclick={close}><Icon name="close" size={20} /></button>
     </div>
     {#if error}<p class="alert failure" role="alert">{error}</p>{/if}
@@ -128,7 +128,7 @@
       >
       <div class="dialog-actions">
         <button type="button" disabled={busy} onclick={close}>Cancel</button>
-        <button class="primary" type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save person'}</button>
+        <button class="primary" type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save Person'}</button>
       </div>
     </form>
   </dialog>

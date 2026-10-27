@@ -143,7 +143,7 @@
 <div class="backdrop">
   <dialog open class="dialog" aria-modal="true" aria-label="Movie editor">
     <div class="dialog-head">
-      <h2>{editing ? 'Edit movie' : 'Add a movie'}</h2>
+      <h2>{editing ? 'Edit Movie' : 'Add Movie'}</h2>
       <button class="close" aria-label="Close" disabled={busy} onclick={close}><Icon name="close" size={20} /></button>
     </div>
     {#if error}<p class="alert failure" role="alert">{error}</p>{/if}
@@ -266,7 +266,7 @@
       </div>
       <div class="dialog-actions">
         <button type="button" disabled={busy} onclick={close}>Cancel</button>
-        <button class="primary" type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save movie'}</button>
+        <button class="primary" type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save Movie'}</button>
       </div>
     </form>
   </dialog>

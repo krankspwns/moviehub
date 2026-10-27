@@ -67,7 +67,7 @@
         onclick={ontoggle}
       />
       <button type="button" class="primary" onclick={onedit}
-        ><Icon name="edit" size={16} /><span>Edit movie</span></button
+        ><Icon name="edit" size={16} /><span>Edit Movie</span></button
       >
     </div>
   </div>

@@ -24,7 +24,7 @@ describe('MovieEditor', () => {
     mockFetch.mockResolvedValue(reply(peoplePage));
     render(MovieEditor, { movie: null, onsaved: vi.fn(), onclose: vi.fn() });
     await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1)); // person picker
-    await fireEvent.submit(screen.getByRole('button', { name: 'Save movie' }).closest('form')!);
+    await fireEvent.submit(screen.getByRole('button', { name: 'Save Movie' }).closest('form')!);
     expect(await screen.findByRole('alert')).toHaveTextContent('Enter a movie title.');
     expect(mockFetch).toHaveBeenCalledTimes(1);
   });
@@ -35,7 +35,7 @@ describe('MovieEditor', () => {
     render(MovieEditor, { movie: null, onsaved, onclose: vi.fn() });
     await fireEvent.input(screen.getByLabelText(/Title/), { target: { value: '  Heat  ' } });
     await fireEvent.input(screen.getByLabelText(/Genres/), { target: { value: 'Crime, crime, Drama' } });
-    await fireEvent.submit(screen.getByRole('button', { name: 'Save movie' }).closest('form')!);
+    await fireEvent.submit(screen.getByRole('button', { name: 'Save Movie' }).closest('form')!);
     await waitFor(() => expect(onsaved).toHaveBeenCalledOnce());
     const variables = bodyOf(1).variables.input;
     expect(variables.title).toBe('Heat');
@@ -50,7 +50,7 @@ describe('MovieEditor', () => {
     });
     render(MovieEditor, { movie: null, onsaved, onclose: vi.fn() });
     await fireEvent.input(screen.getByLabelText(/Title/), { target: { value: 'Heat' } });
-    await fireEvent.submit(screen.getByRole('button', { name: 'Save movie' }).closest('form')!);
+    await fireEvent.submit(screen.getByRole('button', { name: 'Save Movie' }).closest('form')!);
     expect(await screen.findByRole('alert')).toHaveTextContent('title already exists');
     expect(onsaved).not.toHaveBeenCalled();
   });
@@ -91,13 +91,13 @@ describe('PersonEditor', () => {
     render(PersonEditor, { person: null, onsaved: vi.fn(), onclose: vi.fn() });
     await fireEvent.input(screen.getByLabelText(/Name/), { target: { value: 'Ada' } });
     await fireEvent.input(screen.getByLabelText(/Birth date/), { target: { value: '2999-01-01' } });
-    await fireEvent.submit(screen.getByRole('button', { name: 'Save person' }).closest('form')!);
+    await fireEvent.submit(screen.getByRole('button', { name: 'Save Person' }).closest('form')!);
     expect(await screen.findByRole('alert')).toHaveTextContent(/future/);
 
     await fireEvent.input(screen.getByLabelText(/Birth date/), { target: { value: '' } });
     const gif = new File(['x'], 'a.gif', { type: 'image/gif' });
     await fireEvent.change(screen.getByLabelText(/Photo/), { target: { files: [gif] } });
-    await fireEvent.submit(screen.getByRole('button', { name: 'Save person' }).closest('form')!);
+    await fireEvent.submit(screen.getByRole('button', { name: 'Save Person' }).closest('form')!);
     expect(await screen.findByRole('alert')).toHaveTextContent(/JPEG, PNG or WebP/);
     expect(mockFetch).not.toHaveBeenCalled();
   });
@@ -114,9 +114,9 @@ describe('PersonEditor', () => {
     const onsaved = vi.fn();
     mockFetch.mockResolvedValue(reply({ updatePerson: { id: 'p9' } }));
     render(PersonEditor, { person, onsaved, onclose: vi.fn() });
-    expect(screen.getByRole('heading', { name: 'Edit person' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Edit Person' })).toBeInTheDocument();
     expect(screen.getByLabelText(/Name/)).toHaveValue('Ada');
-    await fireEvent.submit(screen.getByRole('button', { name: 'Save person' }).closest('form')!);
+    await fireEvent.submit(screen.getByRole('button', { name: 'Save Person' }).closest('form')!);
     await waitFor(() => expect(onsaved).toHaveBeenCalledOnce());
     expect(bodyOf(0).variables.id).toBe('p9');
   });

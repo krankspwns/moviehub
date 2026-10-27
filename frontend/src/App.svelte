@@ -248,7 +248,7 @@
       {/if}
       {#if tab === 'movies' || tab === 'people'}
         <button class="primary add-btn" disabled={busy} onclick={() => (tab === 'movies' ? openMovie() : openPerson())}>
-          <Icon name="plus" size={18} /><span>Add {tab === 'movies' ? 'movie' : 'person'}</span>
+          <Icon name="plus" size={18} /><span>Add {tab === 'movies' ? 'Movie' : 'Person'}</span>
         </button>
       {/if}
     </div>

@@ -32,9 +32,9 @@ describe('catalog UI', () => {
   it('creates a person and confirms success', async () => {
     render(App);
     await fireEvent.click(screen.getByRole('button', { name: 'Cast & creators' }));
-    await fireEvent.click(screen.getByRole('button', { name: /Add person/ }));
+    await fireEvent.click(screen.getByRole('button', { name: /Add Person/ }));
     await fireEvent.input(screen.getByRole('textbox', { name: /^Name/ }), { target: { value: 'Ada' } });
-    await fireEvent.click(screen.getByRole('button', { name: 'Save person' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Save Person' }));
     await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Person saved successfully'));
     expect(mockFetch.mock.calls.some(([, options]) => JSON.parse(options.body).query.includes('createPerson'))).toBe(
       true,

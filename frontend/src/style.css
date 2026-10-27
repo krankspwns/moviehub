@@ -1456,6 +1456,7 @@ textarea[aria-invalid='true'] {
   pointer-events: none;
 }
 .movie-card .card-body {
+  z-index: 1; /* grid items honour z-index; keeps the text above the positioned poster */
   align-self: end;
   gap: 3px;
   padding: 14px 12px 12px;

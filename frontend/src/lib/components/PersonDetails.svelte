@@ -42,7 +42,7 @@
         />
       {/if}
       <button type="button" class="primary" onclick={onedit}
-        ><Icon name="edit" size={16} /><span>Edit person</span></button
+        ><Icon name="edit" size={16} /><span>Edit Person</span></button
       >
     </div>
   </div>
