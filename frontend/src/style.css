@@ -1424,63 +1424,67 @@ textarea[aria-invalid='true'] {
   color: #2a1d00;
 }
 
-/* ---------- Movie cards: poster-first layout (no box, text sits under the artwork) ---------- */
+/* ---------- Movie cards: poster with the details overlaid on a soft gradient ---------- */
 .movie-card {
+  display: grid;
   background: transparent;
   border: 0;
-  border-radius: 0;
+  border-radius: 14px;
   overflow: visible;
+  box-shadow: 0 6px 18px var(--shadow-color);
 }
 @media (hover: hover) {
   .movie-card:hover {
-    transform: none;
-    box-shadow: none;
+    transform: translateY(-4px);
+    box-shadow: 0 14px 30px var(--shadow-strong);
   }
+}
+.movie-card .poster,
+.movie-card .card-body {
+  grid-area: 1 / 1;
 }
 .movie-card .poster {
   border: 1px solid var(--border);
   border-radius: 14px;
-  box-shadow: 0 6px 18px var(--shadow-color);
-  transition:
-    transform 0.2s,
-    box-shadow 0.2s;
 }
 .movie-card .poster::after {
   content: '';
   position: absolute;
   inset: auto 0 0;
-  height: 40%;
-  background: linear-gradient(transparent, rgb(0 0 0 / 0.55));
+  height: 62%;
+  background: linear-gradient(transparent, rgb(8 6 14 / 0.88));
   pointer-events: none;
 }
-.movie-card .badge {
-  z-index: 1;
-  color: #fff;
-  background: rgb(0 0 0 / 0.45);
-  border-color: rgb(255 255 255 / 0.2);
-}
-@media (hover: hover) {
-  .movie-card:hover .poster {
-    transform: translateY(-4px);
-    box-shadow: 0 14px 30px var(--shadow-strong);
-  }
-}
 .movie-card .card-body {
-  gap: 4px;
-  padding: 10px 2px 0;
+  align-self: end;
+  gap: 3px;
+  padding: 14px 12px 12px;
+  color: #fff;
 }
 .movie-card .card-body h3 {
-  font-size: 0.95rem;
+  font-size: 0.98rem;
   font-weight: 700;
+  text-shadow: 0 1px 6px rgb(0 0 0 / 0.5);
 }
 .movie-card .meta {
+  color: rgb(255 255 255 / 0.8);
   font-size: 0.8rem;
 }
 .movie-card .chips {
-  margin-top: 2px;
+  margin-top: 3px;
+}
+.movie-card .chip {
+  color: #fff;
+  background: rgb(255 255 255 / 0.18);
+  border-color: transparent;
 }
 .chip.more {
   color: var(--muted);
   background: transparent;
   border-color: var(--border);
+}
+.movie-card .chip.more {
+  color: rgb(255 255 255 / 0.8);
+  background: transparent;
+  border-color: rgb(255 255 255 / 0.3);
 }
