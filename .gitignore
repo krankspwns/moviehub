@@ -53,3 +53,6 @@ data/
 # Environment overrides
 .env
 .env.*
+
+# Runtime logs/pids from setup.sh
+.run/
