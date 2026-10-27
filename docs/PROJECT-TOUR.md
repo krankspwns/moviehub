@@ -83,5 +83,5 @@ The browser uses `XMLHttpRequest` so it can show upload progress (`uploadImage()
 - **gRPC / protobuf** – typed service-to-service calls defined in `.proto`; faster and stricter than JSON over HTTP.
 - **GraphQL** – the browser asks for exactly the fields it needs through one `/graphql` endpoint.
 - **Flyway** – applies the numbered SQL migrations on startup.
-- **Svelte 5 runes** – `$props`, `$state`, `$derived` in the newer components; `App.svelte` still uses the older `let` style.
+- **Svelte 5 runes** – `$props`, `$state`, `$derived`: how every component declares props and reactive state (enforced in `vite.config.ts`).
 

@@ -17,43 +17,44 @@
   import { applyTheme, nextTheme, readTheme, writeTheme, type Theme } from './lib/state/theme';
 
   type Tab = 'movies' | 'people' | 'saved' | 'search';
-  let tab: Tab = 'movies';
-  let query = '';
-  let roleFilter: Role | '' = '';
-  let page = 0;
-  let movies: Page<Movie> | null = null;
-  let people: Page<Person> | null = null;
-  let results: { movies: Movie[]; people: Person[] } | null = null;
-  let savedIds: string[] = readSaved();
-  let theme: Theme = readTheme();
-  applyTheme(theme);
-  let savedMovies: Movie[] | null = null;
-  let loading = false;
-  let busy = false;
-  let error = '';
-  let notice = '';
+  let tab = $state<Tab>('movies');
+  let query = $state('');
+  let roleFilter = $state<Role | ''>('');
+  let page = $state(0);
+  let movies = $state<Page<Movie> | null>(null);
+  let people = $state<Page<Person> | null>(null);
+  let results = $state<{ movies: Movie[]; people: Person[] } | null>(null);
+  let savedIds = $state<string[]>(readSaved());
+  const initialTheme: Theme = readTheme();
+  applyTheme(initialTheme);
+  let theme = $state<Theme>(initialTheme);
+  let savedMovies = $state<Movie[] | null>(null);
+  let loading = $state(false);
+  let busy = $state(false);
+  let error = $state('');
+  let notice = $state('');
   let requestId = 0;
   let timer: ReturnType<typeof setTimeout>;
 
-  let modal: 'movie' | 'person' | null = null;
-  let viewMovie: Movie | null = null;
-  let viewPerson: Person | null = null;
-  let editingMovie: Movie | null = null;
-  let editingPerson: Person | null = null;
-  let movieForm: MovieInput = blankMovie();
-  let personForm: PersonInput = { name: '', bio: '', birthDate: '' };
-  let genreText = '';
-  let file: File | null = null;
-  let avatarFile: File | null = null;
-  let avatarPreview = '';
-  let uploadPercent: number | null = null;
-  let pickerQuery = '';
-  let pickerPeople: Person[] = [];
-  let pickerPage = 0;
-  let pickerHasMore = false;
-  let pickerBusy = false;
+  let modal = $state<'movie' | 'person' | null>(null);
+  let viewMovie = $state<Movie | null>(null);
+  let viewPerson = $state<Person | null>(null);
+  let editingMovie = $state<Movie | null>(null);
+  let editingPerson = $state<Person | null>(null);
+  let movieForm = $state<MovieInput>(blankMovie());
+  let personForm = $state<PersonInput>({ name: '', bio: '', birthDate: '' });
+  let genreText = $state('');
+  let file = $state<File | null>(null);
+  let avatarFile = $state<File | null>(null);
+  let avatarPreview = $state('');
+  let uploadPercent = $state<number | null>(null);
+  let pickerQuery = $state('');
+  let pickerPeople = $state<Person[]>([]);
+  let pickerPage = $state(0);
+  let pickerHasMore = $state(false);
+  let pickerBusy = $state(false);
   let pickerRequestId = 0;
-  let knownPeople: Record<string, string> = {};
+  let knownPeople = $state<Record<string, string>>({});
 
   function blankMovie(): MovieInput {
     return { title: '', synopsis: '', releaseYear: new Date().getFullYear(), runtimeMinutes: 0, genres: [], credits: [] };
@@ -64,7 +65,7 @@
     avatarFile = next;
     avatarPreview = next ? URL.createObjectURL(next) : '';
   }
-  $: savedLabel = savedIds.length > 99 ? '99+' : String(savedIds.length);
+  const savedLabel = $derived(savedIds.length > 99 ? '99+' : String(savedIds.length));
   function toggleTheme() { theme = nextTheme(theme); applyTheme(theme); writeTheme(theme); }
   function closeDetail() { viewMovie = null; viewPerson = null; }
   function onKey(event: KeyboardEvent) {
