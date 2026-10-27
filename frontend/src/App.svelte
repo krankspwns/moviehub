@@ -6,6 +6,7 @@
     type CreditInput, type Movie, type MovieInput, type Page, type Person, type PersonInput, type Role,
   } from './lib/api/catalog';
   import { artworkSrc, hue, initials, roleLabel } from './lib/format';
+  import { parseGenres, validateMovie, validatePerson } from './lib/validate';
   import Icon from './lib/components/Icon.svelte';
   import MovieCard from './lib/components/MovieCard.svelte';
   import PersonCard from './lib/components/PersonCard.svelte';
@@ -136,17 +137,15 @@
   }
   async function submitMovie() {
     error = ''; notice = '';
-    if (!movieForm.title.trim()) { error = 'Enter a movie title.'; return; }
-    if (movieForm.credits.some(c => !c.personId)) { error = 'Choose a person for every credit.'; return; }
+    const genres = parseGenres(genreText);
+    const movieProblem = validateMovie(movieForm, genres);
+    if (movieProblem) { error = movieProblem; return; }
     const artworkProblem = imageProblem(file);
     if (artworkProblem) { error = artworkProblem; return; }
-    if (new Set(movieForm.credits.map(c => `${c.personId}:${c.role}`)).size !== movieForm.credits.length) {
-      error = 'Each person can only have one credit per role.'; return;
-    }
     busy = true;
     try {
       const saved = await saveMovie({ ...movieForm,
-        title: movieForm.title.trim(), genres: genreText.split(',').map(g => g.trim()).filter(Boolean),
+        title: movieForm.title.trim(), genres,
         credits: movieForm.credits.map(c => ({ ...c, characterName: c.role === 'ACTOR' ? c.characterName : '' })),
       }, editingMovie?.id);
       editingMovie = saved; // Retain the ID if the subsequent upload fails, so retry cannot create a duplicate.
@@ -161,7 +160,8 @@
   }
   async function submitPerson() {
     error = ''; notice = '';
-    if (!personForm.name.trim()) { error = 'Enter a name.'; return; }
+    const personProblem = validatePerson(personForm);
+    if (personProblem) { error = personProblem; return; }
     const avatarProblem = imageProblem(avatarFile);
     if (avatarProblem) { error = avatarProblem; return; }
     busy = true;
@@ -206,7 +206,7 @@
     <nav class="tabs" aria-label="Catalog sections">
       <button class:active={tab === 'movies'} aria-current={tab === 'movies' ? 'page' : undefined} onclick={() => switchTab('movies')}><Icon name="film" size={18} /><span>Movies</span></button>
       <button class:active={tab === 'people'} aria-current={tab === 'people' ? 'page' : undefined} onclick={() => switchTab('people')}><Icon name="users" size={18} /><span>Cast & creators</span></button>
-      <button class:active={tab === 'saved'} aria-current={tab === 'saved' ? 'page' : undefined} onclick={() => switchTab('saved')}><span class="tab-icon"><Icon name="bookmark" size={18} />{#if savedIds.length}<b class="count">{savedIds.length}</b>{/if}</span><span>Saved</span></button>
+      <button class:active={tab === 'saved'} aria-current={tab === 'saved' ? 'page' : undefined} onclick={() => switchTab('saved')}><span class="tab-icon" class:has-items={savedIds.length > 0}><Icon name="bookmark" size={26} />{#if savedIds.length}<b class="count" aria-label="{savedIds.length} saved">{savedIds.length > 99 ? '99+' : savedIds.length}</b>{/if}</span><span>Saved</span></button>
       <button class:active={tab === 'search'} aria-current={tab === 'search' ? 'page' : undefined} onclick={() => switchTab('search')}><Icon name="compass" size={18} /><span>Explore all</span></button>
     </nav>
   </div>

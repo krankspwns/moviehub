@@ -315,9 +315,10 @@ progress { width: 100%; margin-top: 8px; accent-color: var(--accent); }
 /* ---------- Brand, saved list and avatars ---------- */
 .logo { flex: none; border-radius: 10px; box-shadow: 0 4px 14px rgb(139 92 246 / 0.35); }
 .tab-icon { position: relative; display: inline-flex; }
+.tab-icon.has-items .icon { fill: rgb(139 92 246 / 0.35); }
 .count {
-  position: absolute; top: -6px; right: -12px; min-width: 17px; padding: 0 5px; font-size: 0.66rem; line-height: 17px;
-  text-align: center; color: #fff; background: var(--accent-2); border-radius: 999px;
+  position: absolute; inset: 0 0 4px 0; display: grid; place-items: center;
+  font-size: 0.6rem; font-weight: 800; line-height: 1; color: #fff; letter-spacing: -0.02em;
 }
 .save-action { position: absolute; top: 8px; left: 8px; z-index: 2; }
 .icon-btn.active { background: var(--gold); border-color: var(--gold); color: #2a1d00; }
