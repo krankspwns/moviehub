@@ -4,7 +4,11 @@ type ReadableStorage = Pick<Storage, 'getItem'>;
 type WritableStorage = Pick<Storage, 'setItem'>;
 
 function browserStorage(): Storage | null {
-  try { return typeof localStorage === 'undefined' ? null : localStorage; } catch { return null; }
+  try {
+    return typeof localStorage === 'undefined' ? null : localStorage;
+  } catch {
+    return null;
+  }
 }
 
 /** Reads saved movie ids; tolerates missing storage, corrupt JSON, wrong shapes and duplicates. */
@@ -22,11 +26,14 @@ export function readSaved(storage: ReadableStorage | null = browserStorage()): s
 /** Best effort: private mode / quota errors must never break the UI. */
 export function writeSaved(ids: string[], storage: WritableStorage | null = browserStorage()): void {
   if (!storage) return;
-  try { storage.setItem(KEY, JSON.stringify(ids)); } catch { /* ignore */ }
+  try {
+    storage.setItem(KEY, JSON.stringify(ids));
+  } catch {
+    /* ignore */
+  }
 }
 
 /** Adds the id at the front (newest first) or removes it when already saved. */
 export function toggleSaved(ids: string[], id: string): string[] {
   return ids.includes(id) ? ids.filter((existing) => existing !== id) : [id, ...ids];
 }
-

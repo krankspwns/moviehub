@@ -10,7 +10,10 @@ beforeEach(() => {
   vi.stubGlobal('fetch', mockFetch);
   mockFetch.mockReset();
 });
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 const reply = (data: unknown) => ({ ok: true, json: async () => ({ data }) });
 const peoplePage = { people: { items: [], total: 0, page: 0, pageSize: 12, totalPages: 0 } };
@@ -42,7 +45,8 @@ describe('MovieEditor', () => {
   it('shows server errors and stays open', async () => {
     const onsaved = vi.fn();
     mockFetch.mockResolvedValueOnce(reply(peoplePage)).mockResolvedValueOnce({
-      ok: true, json: async () => ({ errors: [{ message: 'title already exists', extensions: { code: 'INVALID' } }] }),
+      ok: true,
+      json: async () => ({ errors: [{ message: 'title already exists', extensions: { code: 'INVALID' } }] }),
     });
     render(MovieEditor, { movie: null, onsaved, onclose: vi.fn() });
     await fireEvent.input(screen.getByLabelText(/Title/), { target: { value: 'Heat' } });
@@ -78,7 +82,14 @@ describe('PersonEditor', () => {
   });
 
   it('prefills when editing and sends the existing id', async () => {
-    const person: Person = { id: 'p9', name: 'Ada', bio: 'Maths', birthDate: '1815-12-10', avatarUrl: null, filmography: [] };
+    const person: Person = {
+      id: 'p9',
+      name: 'Ada',
+      bio: 'Maths',
+      birthDate: '1815-12-10',
+      avatarUrl: null,
+      filmography: [],
+    };
     const onsaved = vi.fn();
     mockFetch.mockResolvedValue(reply({ updatePerson: { id: 'p9' } }));
     render(PersonEditor, { person, onsaved, onclose: vi.fn() });
@@ -104,4 +115,3 @@ describe('SearchResults', () => {
     expect(screen.getByText('No matches found.')).toBeInTheDocument();
   });
 });
-

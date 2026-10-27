@@ -5,18 +5,29 @@ import type { MovieInput, PersonInput } from './api/catalog';
  * The server stays the source of truth and re-validates everything.
  */
 export const LIMITS = {
-  title: 200, synopsis: 4000, minYear: 1888, yearsAhead: 10, maxRuntime: 1000,
-  maxGenres: 10, genreLength: 50, character: 200, name: 200, bio: 4000,
+  title: 200,
+  synopsis: 4000,
+  minYear: 1888,
+  yearsAhead: 10,
+  maxRuntime: 1000,
+  maxGenres: 10,
+  genreLength: 50,
+  character: 200,
+  name: 200,
+  bio: 4000,
 } as const;
 
 export function parseGenres(text: string): string[] {
   const seen = new Set<string>();
-  return text.split(',').map((g) => g.trim()).filter((g) => {
-    const key = g.toLowerCase();
-    if (!g || seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+  return text
+    .split(',')
+    .map((g) => g.trim())
+    .filter((g) => {
+      const key = g.toLowerCase();
+      if (!g || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 }
 
 export function validateMovie(movie: MovieInput, genres: string[], now = new Date()): string | null {
@@ -33,7 +44,8 @@ export function validateMovie(movie: MovieInput, genres: string[], now = new Dat
     return `Runtime must be a whole number between 0 and ${LIMITS.maxRuntime} minutes (0 = unknown).`;
   }
   if (genres.length > LIMITS.maxGenres) return `Use at most ${LIMITS.maxGenres} genres.`;
-  if (genres.some((g) => g.length > LIMITS.genreLength)) return `Each genre must be at most ${LIMITS.genreLength} characters.`;
+  if (genres.some((g) => g.length > LIMITS.genreLength))
+    return `Each genre must be at most ${LIMITS.genreLength} characters.`;
   if (movie.credits.some((c) => !c.personId)) return 'Choose a person for every credit.';
   if (movie.credits.some((c) => c.role === 'ACTOR' && c.characterName.trim().length > LIMITS.character)) {
     return `Character names must be at most ${LIMITS.character} characters.`;
@@ -56,4 +68,3 @@ export function validatePerson(person: PersonInput, now = new Date()): string | 
   }
   return null;
 }
-

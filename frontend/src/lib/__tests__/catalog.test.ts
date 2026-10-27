@@ -1,8 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { getMovies, graphql, imageProblem, listMovies, listPeople, saveMovie, uploadArtwork, uploadAvatar } from '../api/catalog';
+import {
+  getMovies,
+  graphql,
+  imageProblem,
+  listMovies,
+  listPeople,
+  saveMovie,
+  uploadArtwork,
+  uploadAvatar,
+} from '../api/catalog';
 
 const mockFetch = vi.fn();
-beforeEach(() => { vi.stubGlobal('fetch', mockFetch); });
+beforeEach(() => {
+  vi.stubGlobal('fetch', mockFetch);
+});
 afterEach(() => vi.unstubAllGlobals());
 
 describe('catalog client', () => {
@@ -22,7 +33,10 @@ describe('catalog client', () => {
   });
 
   it('surfaces validation and network errors', async () => {
-    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ errors: [{ message: 'title must not be blank', extensions: { code: 'INVALID' } }] }) });
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ errors: [{ message: 'title must not be blank', extensions: { code: 'INVALID' } }] }),
+    });
     await expect(graphql('query { movies { total } }')).rejects.toThrow('title must not be blank');
     mockFetch.mockRejectedValueOnce(new Error('offline'));
     await expect(graphql('query { movies { total } }')).rejects.toThrow('Cannot reach the server');
@@ -30,7 +44,10 @@ describe('catalog client', () => {
 
   it('sends updates to the mutation with the existing ID', async () => {
     mockFetch.mockResolvedValue({ ok: true, json: async () => ({ data: { updateMovie: { id: 'm1' } } }) });
-    await saveMovie({ title: 'One', synopsis: '', releaseYear: 2000, runtimeMinutes: 0, genres: [], credits: [] }, 'm1');
+    await saveMovie(
+      { title: 'One', synopsis: '', releaseYear: 2000, runtimeMinutes: 0, genres: [], credits: [] },
+      'm1',
+    );
     expect(JSON.parse(mockFetch.mock.calls[0][1].body).variables.id).toBe('m1');
     expect(JSON.parse(mockFetch.mock.calls[0][1].body).query).toContain('updateMovie');
   });
@@ -40,7 +57,10 @@ describe('artwork', () => {
   it('uploads a multipart file and reports progress', async () => {
     let xhr!: MockXHR;
     class MockXHR {
-      constructor() { xhr = this; }
+      constructor() {
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        xhr = this;
+      }
       upload: { onprogress?: (event: { lengthComputable: boolean; loaded: number; total: number }) => void } = {};
       onload?: () => void;
       status = 200;
@@ -83,9 +103,12 @@ describe('avatars and saved lookups', () => {
   });
 
   it('fetches saved movies in one query, keeps order and skips deleted ones', async () => {
-    mockFetch.mockResolvedValue({ ok: true, json: async () => ({ data: { m0: { id: 'a' }, m1: null, m2: { id: 'c' } } }) });
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: { m0: { id: 'a' }, m1: null, m2: { id: 'c' } } }),
+    });
     const movies = await getMovies(['a', 'gone', 'c']);
-    expect(movies.map(m => m.id)).toEqual(['a', 'c']);
+    expect(movies.map((m) => m.id)).toEqual(['a', 'c']);
     const body = JSON.parse(mockFetch.mock.calls[0][1].body);
     expect(body.variables).toEqual({ id0: 'a', id1: 'gone', id2: 'c' });
     expect(body.query).not.toContain('gone');

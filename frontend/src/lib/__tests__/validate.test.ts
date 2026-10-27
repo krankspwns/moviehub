@@ -4,7 +4,13 @@ import type { MovieInput } from '../api/catalog';
 
 const now = new Date('2026-06-01T00:00:00');
 const movie = (over: Partial<MovieInput> = {}): MovieInput => ({
-  title: 'Heat', synopsis: '', releaseYear: 1995, runtimeMinutes: 170, genres: [], credits: [], ...over,
+  title: 'Heat',
+  synopsis: '',
+  releaseYear: 1995,
+  runtimeMinutes: 170,
+  genres: [],
+  credits: [],
+  ...over,
 });
 
 describe('validateMovie', () => {
@@ -28,7 +34,13 @@ describe('validateMovie', () => {
     expect(validateMovie(movie({ runtimeMinutes: 1001 }), [], now)).toMatch(/runtime/i);
   });
   it('limits genres', () => {
-    expect(validateMovie(movie(), Array.from({ length: 11 }, (_, i) => `g${i}`), now)).toMatch(/10 genres/);
+    expect(
+      validateMovie(
+        movie(),
+        Array.from({ length: 11 }, (_, i) => `g${i}`),
+        now,
+      ),
+    ).toMatch(/10 genres/);
     expect(validateMovie(movie(), ['x'.repeat(51)], now)).toMatch(/50/);
   });
   it('checks credits', () => {
@@ -58,4 +70,3 @@ describe('parseGenres', () => {
     expect(parseGenres('')).toEqual([]);
   });
 });
-

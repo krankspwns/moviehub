@@ -7,13 +7,20 @@ beforeEach(() => {
   vi.stubGlobal('fetch', mockFetch);
   mockFetch.mockImplementation(async (_url, options: RequestInit) => {
     const { query } = JSON.parse(String(options.body));
-    if (query.includes('createPerson')) return { ok: true, json: async () => ({ data: { createPerson: { id: 'p1', name: 'Ada' } } }) };
-    if (query.includes('search(')) return { ok: true, json: async () => ({ data: { search: { movies: [], people: [] } } }) };
-    if (query.includes('people(')) return { ok: true, json: async () => ({ data: { people: { items: [], total: 0, page: 0, totalPages: 0 } } }) };
+    if (query.includes('createPerson'))
+      return { ok: true, json: async () => ({ data: { createPerson: { id: 'p1', name: 'Ada' } } }) };
+    if (query.includes('search('))
+      return { ok: true, json: async () => ({ data: { search: { movies: [], people: [] } } }) };
+    if (query.includes('people('))
+      return { ok: true, json: async () => ({ data: { people: { items: [], total: 0, page: 0, totalPages: 0 } } }) };
     return { ok: true, json: async () => ({ data: { movies: { items: [], total: 0, page: 0, totalPages: 0 } } }) };
   });
 });
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.clearAllMocks(); });
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+  vi.clearAllMocks();
+});
 
 describe('catalog UI', () => {
   it('shows loading feedback and a helpful empty state', async () => {
@@ -29,14 +36,21 @@ describe('catalog UI', () => {
     await fireEvent.input(screen.getByRole('textbox', { name: 'Name' }), { target: { value: 'Ada' } });
     await fireEvent.click(screen.getByRole('button', { name: 'Save person' }));
     await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Person saved successfully'));
-    expect(mockFetch.mock.calls.some(([, options]) => JSON.parse(options.body).query.includes('createPerson'))).toBe(true);
+    expect(mockFetch.mock.calls.some(([, options]) => JSON.parse(options.body).query.includes('createPerson'))).toBe(
+      true,
+    );
   });
 
   it('searches both movies and people after entering a term', async () => {
     render(App);
     await fireEvent.click(screen.getByRole('button', { name: 'Explore all' }));
     await fireEvent.input(screen.getByRole('textbox', { name: 'Search' }), { target: { value: 'Ada' } });
-    await waitFor(() => expect(mockFetch.mock.calls.some(([, options]) => JSON.parse(options.body).query.includes('search('))).toBe(true), { timeout: 2000 });
+    await waitFor(
+      () =>
+        expect(mockFetch.mock.calls.some(([, options]) => JSON.parse(options.body).query.includes('search('))).toBe(
+          true,
+        ),
+      { timeout: 2000 },
+    );
   });
 });
-

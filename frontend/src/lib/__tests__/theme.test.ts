@@ -12,7 +12,16 @@ describe('theme', () => {
     expect(readTheme(stored(null), true)).toBe('light');
     expect(readTheme(stored('purple'), false)).toBe('dark');
     expect(readTheme(null, false)).toBe('dark');
-    expect(readTheme({ getItem: () => { throw new Error('blocked'); } }, true)).toBe('light');
+    expect(
+      readTheme(
+        {
+          getItem: () => {
+            throw new Error('blocked');
+          },
+        },
+        true,
+      ),
+    ).toBe('light');
   });
   it('toggles and persists without throwing when storage fails', () => {
     expect(nextTheme('dark')).toBe('light');
@@ -20,7 +29,13 @@ describe('theme', () => {
     const setItem = vi.fn();
     writeTheme('light', { setItem });
     expect(setItem).toHaveBeenCalledWith('moviehub.theme.v1', 'light');
-    expect(() => writeTheme('dark', { setItem: () => { throw new Error('quota'); } })).not.toThrow();
+    expect(() =>
+      writeTheme('dark', {
+        setItem: () => {
+          throw new Error('quota');
+        },
+      }),
+    ).not.toThrow();
   });
   it('applies the theme to the document and the browser theme colour', () => {
     document.head.innerHTML = '<meta name="theme-color" content="#000">';

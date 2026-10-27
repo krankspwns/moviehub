@@ -21,10 +21,14 @@
       <button class="close" aria-label="Close details" onclick={onclose}><Icon name="close" size={20} /></button>
     </div>
     <p class="meta detail-meta"><span>{person.birthDate ? `Born ${person.birthDate}` : 'Birth date unknown'}</span></p>
-    {#if roles.length}<div class="chips">{#each roles as role}<span class="chip">{roleLabel(role)}</span>{/each}</div>{/if}
+    {#if roles.length}<div class="chips">
+        {#each roles as role (role)}<span class="chip">{roleLabel(role)}</span>{/each}
+      </div>{/if}
     <p class="detail-text">{person.bio || 'No biography yet.'}</p>
     <div class="detail-actions">
-      <button type="button" class="primary" onclick={onedit}><Icon name="edit" size={16} /><span>Edit person</span></button>
+      <button type="button" class="primary" onclick={onedit}
+        ><Icon name="edit" size={16} /><span>Edit person</span></button
+      >
     </div>
   </div>
 </div>
@@ -32,10 +36,15 @@
 <div class="form-section">
   <h3>Filmography <span class="hint">({person.filmography.length})</span></h3>
   {#if person.filmography.length}
-    <ul class="people-list">{#each person.filmography as entry}
-      <li><span class="mini-avatar square" style="--hue: {hue(entry.title)}" aria-hidden="true"><Icon name="film" size={16} /></span>
-        <span><strong>{entry.title}</strong><small>{roleLabel(entry.role)}</small></span></li>
-    {/each}</ul>
+    <ul class="people-list">
+      {#each person.filmography as entry (entry.movieId + entry.role)}
+        <li>
+          <span class="mini-avatar square" style="--hue: {hue(entry.title)}" aria-hidden="true"
+            ><Icon name="film" size={16} /></span
+          >
+          <span><strong>{entry.title}</strong><small>{roleLabel(entry.role)}</small></span>
+        </li>
+      {/each}
+    </ul>
   {:else}<p class="hint">Not credited on any movie yet.</p>{/if}
 </div>
-

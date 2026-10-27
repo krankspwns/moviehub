@@ -24,7 +24,9 @@ describe('saved list', () => {
   });
 
   it('survives unavailable or full storage when writing', () => {
-    const setItem = vi.fn(() => { throw new Error('quota'); });
+    const setItem = vi.fn(() => {
+      throw new Error('quota');
+    });
     expect(() => writeSaved(['a'], { setItem })).not.toThrow();
     expect(() => writeSaved(['a'], null)).not.toThrow();
     const ok = vi.fn();

@@ -4,7 +4,11 @@ const KEY = 'moviehub.theme.v1';
 const COLORS: Record<Theme, string> = { dark: '#0e0c14', light: '#f6f3fc' };
 
 function browserStorage(): Storage | null {
-  try { return typeof localStorage === 'undefined' ? null : localStorage; } catch { return null; }
+  try {
+    return typeof localStorage === 'undefined' ? null : localStorage;
+  } catch {
+    return null;
+  }
 }
 
 function systemPrefersLight(): boolean {
@@ -19,12 +23,18 @@ export function readTheme(
   try {
     const value = storage?.getItem(KEY);
     if (value === 'light' || value === 'dark') return value;
-  } catch { /* storage blocked */ }
+  } catch {
+    /* storage blocked */
+  }
   return prefersLight ? 'light' : 'dark';
 }
 
 export function writeTheme(theme: Theme, storage: Pick<Storage, 'setItem'> | null = browserStorage()): void {
-  try { storage?.setItem(KEY, theme); } catch { /* ignore */ }
+  try {
+    storage?.setItem(KEY, theme);
+  } catch {
+    /* ignore */
+  }
 }
 
 export const nextTheme = (theme: Theme): Theme => (theme === 'dark' ? 'light' : 'dark');
