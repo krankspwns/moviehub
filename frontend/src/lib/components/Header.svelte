@@ -13,12 +13,14 @@
     theme,
     onswitch,
     ontheme,
+    onhome,
   }: {
     tab: Tab;
     savedCount: number;
     theme: Theme;
     onswitch: (tab: Tab) => void;
     ontheme: () => void;
+    onhome: () => void;
   } = $props();
 
   const savedLabel = $derived(savedCount > 99 ? '99+' : String(savedCount));
@@ -32,7 +34,7 @@
 
 <header class="topbar">
   <div class="wrap header-inner">
-    <div class="brand"><Logo size={34} /> MovieHub</div>
+    <button type="button" class="brand" aria-label="MovieHub home" onclick={onhome}><Logo size={34} /> MovieHub</button>
     <nav class="tabs" aria-label="Catalog sections">
       {#each tabs as item (item.id)}
         <button
