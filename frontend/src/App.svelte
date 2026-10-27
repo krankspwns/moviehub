@@ -430,8 +430,8 @@
           onclose={closeDetail}
           ontoggle={() => toggleSave(shown)}
           onedit={() => {
+            openMovie(shown); // before closing: `shown` is derived from viewMovie and becomes null once it is cleared
             closeDetail();
-            openMovie(shown);
           }}
         />
       {:else if viewPerson}
@@ -442,8 +442,8 @@
           ontoggle={() => toggleSavePerson(shown)}
           onclose={closeDetail}
           onedit={() => {
-            closeDetail();
             openPerson(shown);
+            closeDetail();
           }}
         />
       {/if}
