@@ -1,7 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import { imageProblem, savePerson, uploadAvatar, type Person, type PersonInput } from '../api/catalog';
-  import { artworkSrc, errorMessage, hue, initials } from '../format';
+  import { artworkSrc, blockEnterSubmit, errorMessage, hue, initials } from '../format';
   import { LIMITS, personFieldErrors, validatePerson } from '../validate';
   import FieldHint from './FieldHint.svelte';
   import Icon from './Icon.svelte';
@@ -78,8 +78,10 @@
       <button class="close" aria-label="Close" disabled={busy} onclick={close}><Icon name="close" size={20} /></button>
     </div>
     {#if error}<p class="alert failure" role="alert">{error}</p>{/if}
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions (keyboard handling is delegated from the fields) -->
     <form
       novalidate
+      onkeydown={blockEnterSubmit}
       onsubmit={(event) => {
         event.preventDefault();
         void submit();

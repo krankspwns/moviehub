@@ -26,3 +26,11 @@ export function hue(seed: string): number {
 export function errorMessage(e: unknown): string {
   return e instanceof Error ? e.message : 'Something went wrong. Please retry.';
 }
+
+/** Stops Enter inside a text field from submitting (saving) the whole form by accident. Textareas keep newlines. */
+export function blockEnterSubmit(event: KeyboardEvent): void {
+  const target = event.target;
+  if (event.key === 'Enter' && target instanceof HTMLInputElement && !['button', 'submit'].includes(target.type)) {
+    event.preventDefault();
+  }
+}
