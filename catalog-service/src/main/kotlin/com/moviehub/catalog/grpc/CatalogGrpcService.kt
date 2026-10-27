@@ -5,10 +5,10 @@ import com.moviehub.catalog.domain.ValidationException
 import com.moviehub.catalog.service.ArtworkService
 import com.moviehub.catalog.service.ArtworkUpload
 import com.moviehub.catalog.service.ImageOwner
-import com.moviehub.catalog.service.StoredArtwork
 import com.moviehub.catalog.service.MovieService
 import com.moviehub.catalog.service.PersonService
 import com.moviehub.catalog.service.SearchService
+import com.moviehub.catalog.service.StoredArtwork
 import io.grpc.stub.StreamObserver
 import net.devh.boot.grpc.server.service.GrpcService
 
@@ -28,17 +28,15 @@ class CatalogGrpcService(
 
     // ---- Movies ----
 
-    override fun listMovies(request: ListMoviesRequest, observer: StreamObserver<ListMoviesResponse>) =
-        observer.reply {
-            val page = movies.list(request.query, request.page, request.pageSize)
-            ListMoviesResponse.newBuilder()
-                .addAllMovies(page.items.map { it.toProto() })
-                .setTotal(page.total)
-                .build()
-        }
+    override fun listMovies(request: ListMoviesRequest, observer: StreamObserver<ListMoviesResponse>) = observer.reply {
+        val page = movies.list(request.query, request.page, request.pageSize)
+        ListMoviesResponse.newBuilder()
+            .addAllMovies(page.items.map { it.toProto() })
+            .setTotal(page.total)
+            .build()
+    }
 
-    override fun getMovie(request: GetByIdRequest, observer: StreamObserver<Movie>) =
-        observer.reply { movies.get(request.id).toProto() }
+    override fun getMovie(request: GetByIdRequest, observer: StreamObserver<Movie>) = observer.reply { movies.get(request.id).toProto() }
 
     override fun createMovie(request: MovieInput, observer: StreamObserver<Movie>) =
         observer.reply { movies.create(request.toCommand()).toProto() }
@@ -51,17 +49,15 @@ class CatalogGrpcService(
 
     // ---- People ----
 
-    override fun listPeople(request: ListPeopleRequest, observer: StreamObserver<ListPeopleResponse>) =
-        observer.reply {
-            val page = people.list(request.query, request.role.toDomainOrNull(), request.page, request.pageSize)
-            ListPeopleResponse.newBuilder()
-                .addAllPeople(page.items.map { it.toProto() })
-                .setTotal(page.total)
-                .build()
-        }
+    override fun listPeople(request: ListPeopleRequest, observer: StreamObserver<ListPeopleResponse>) = observer.reply {
+        val page = people.list(request.query, request.role.toDomainOrNull(), request.page, request.pageSize)
+        ListPeopleResponse.newBuilder()
+            .addAllPeople(page.items.map { it.toProto() })
+            .setTotal(page.total)
+            .build()
+    }
 
-    override fun getPerson(request: GetByIdRequest, observer: StreamObserver<Person>) =
-        observer.reply { people.get(request.id).toProto() }
+    override fun getPerson(request: GetByIdRequest, observer: StreamObserver<Person>) = observer.reply { people.get(request.id).toProto() }
 
     override fun createPerson(request: PersonInput, observer: StreamObserver<Person>) =
         observer.reply { people.create(request.toCommand()).toProto() }
@@ -74,14 +70,13 @@ class CatalogGrpcService(
 
     // ---- Search ----
 
-    override fun search(request: SearchRequest, observer: StreamObserver<SearchResponse>) =
-        observer.reply {
-            val result = search.search(request.query, request.limit)
-            SearchResponse.newBuilder()
-                .addAllMovies(result.movies.map { it.toProto() })
-                .addAllPeople(result.people.map { it.toProto() })
-                .build()
-        }
+    override fun search(request: SearchRequest, observer: StreamObserver<SearchResponse>) = observer.reply {
+        val result = search.search(request.query, request.limit)
+        SearchResponse.newBuilder()
+            .addAllMovies(result.movies.map { it.toProto() })
+            .addAllPeople(result.people.map { it.toProto() })
+            .build()
+    }
 
     // ---- Artwork ----
 
@@ -101,7 +96,13 @@ class CatalogGrpcService(
                     when (message.payloadCase) {
                         UploadArtworkRequest.PayloadCase.METADATA -> {
                             if (upload != null) throw ValidationException("metadata must be sent exactly once")
-                            val owner = if (message.metadata.kind == ArtworkKind.ARTWORK_KIND_PERSON) ImageOwner.PERSON else ImageOwner.MOVIE
+                            val owner = if (message.metadata.kind ==
+                                ArtworkKind.ARTWORK_KIND_PERSON
+                            ) {
+                                ImageOwner.PERSON
+                            } else {
+                                ImageOwner.MOVIE
+                            }
                             upload = artwork.begin(owner, message.metadata.movieId, message.metadata.contentType)
                         }
                         UploadArtworkRequest.PayloadCase.CHUNK -> {
@@ -176,4 +177,3 @@ class CatalogGrpcService(
         onCompleted()
     }
 }
-

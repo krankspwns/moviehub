@@ -112,4 +112,3 @@ class CreditEntity(
     @Column(name = "character_name", nullable = false, length = 200)
     var characterName: String = "",
 )
-

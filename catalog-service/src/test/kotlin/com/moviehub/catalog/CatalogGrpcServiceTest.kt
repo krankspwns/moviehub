@@ -57,8 +57,7 @@ class CatalogGrpcServiceTest : IntegrationTestBase() {
 
     private fun id(value: String) = GetByIdRequest.newBuilder().setId(value).build()
 
-    private fun status(block: () -> Unit): Status.Code =
-        assertThrows<StatusRuntimeException> { block() }.status.code
+    private fun status(block: () -> Unit): Status.Code = assertThrows<StatusRuntimeException> { block() }.status.code
 
     @Test
     fun `movie crud round trip`() {
@@ -148,9 +147,15 @@ class CatalogGrpcServiceTest : IntegrationTestBase() {
     private class Collector<T> : StreamObserver<T> {
         val result = CompletableFuture<T?>()
         private var last: T? = null
-        override fun onNext(value: T) { last = value }
-        override fun onError(t: Throwable) { result.completeExceptionally(t) }
-        override fun onCompleted() { result.complete(last) }
+        override fun onNext(value: T) {
+            last = value
+        }
+        override fun onError(t: Throwable) {
+            result.completeExceptionally(t)
+        }
+        override fun onCompleted() {
+            result.complete(last)
+        }
     }
 
     private fun upload(movieId: String, contentType: String, chunks: List<ByteArray>): ArtworkInfo? {
@@ -209,4 +214,3 @@ class CatalogGrpcServiceTest : IntegrationTestBase() {
         assertEquals(Status.Code.NOT_FOUND, status { stub.downloadArtwork(id("missing")).asSequence().toList() })
     }
 }
-

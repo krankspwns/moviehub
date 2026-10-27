@@ -15,5 +15,3 @@ fun main(args: Array<String>) {
     TimeZone.setDefault(TimeZone.getTimeZone("UTC"))
     runApplication<CatalogApplication>(*args)
 }
-
-

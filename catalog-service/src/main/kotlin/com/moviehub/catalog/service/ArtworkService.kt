@@ -57,8 +57,7 @@ class ArtworkService(
 ) {
 
     /** Validates the target and declared content type before any bytes are accepted. */
-    fun begin(movieId: String, declaredContentType: String): ArtworkUpload =
-        begin(ImageOwner.MOVIE, movieId, declaredContentType)
+    fun begin(movieId: String, declaredContentType: String): ArtworkUpload = begin(ImageOwner.MOVIE, movieId, declaredContentType)
 
     fun begin(owner: ImageOwner, id: String, declaredContentType: String): ArtworkUpload {
         val contentType = declaredContentType.substringBefore(';').trim().lowercase()
@@ -135,9 +134,9 @@ class ArtworkService(
             "image/jpeg" -> startsWith(0xFF, 0xD8, 0xFF)
             "image/png" -> startsWith(0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A)
             "image/webp" -> startsWith('R'.code, 'I'.code, 'F'.code, 'F'.code) &&
-                head.size >= 12 && String(head, 8, 4, Charsets.US_ASCII) == "WEBP"
+                head.size >= 12 &&
+                String(head, 8, 4, Charsets.US_ASCII) == "WEBP"
             else -> false
         }
     }
 }
-

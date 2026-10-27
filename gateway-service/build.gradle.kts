@@ -23,4 +23,3 @@ dependencies {
     testImplementation("io.grpc:grpc-inprocess:1.68.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
-

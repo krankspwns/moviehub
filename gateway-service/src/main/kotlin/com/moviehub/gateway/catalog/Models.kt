@@ -4,12 +4,7 @@ package com.moviehub.gateway.catalog
 
 enum class Role { ACTOR, DIRECTOR, WRITER, PRODUCER, COMPOSER }
 
-data class CreditDto(
-    val personId: String,
-    val personName: String,
-    val role: Role,
-    val characterName: String,
-)
+data class CreditDto(val personId: String, val personName: String, val role: Role, val characterName: String)
 
 data class MovieDto(
     val id: String,
@@ -61,8 +56,7 @@ class ArtworkDownload(val contentType: String, val chunks: Iterator<ByteArray>)
 enum class FailureKind { NOT_FOUND, INVALID, UNAVAILABLE, INTERNAL }
 
 /** Failure reported by the catalog service, already classified for the edge layers. */
-class CatalogException(val kind: FailureKind, message: String, cause: Throwable? = null) :
-    RuntimeException(message, cause)
+class CatalogException(val kind: FailureKind, message: String, cause: Throwable? = null) : RuntimeException(message, cause)
 
 fun artworkUrl(movieId: String, version: Long) = "/api/movies/$movieId/artwork?v=$version"
 

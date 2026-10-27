@@ -1,17 +1,17 @@
 package com.moviehub.gateway
 
 import com.moviehub.gateway.catalog.CatalogClient
+import com.moviehub.gateway.catalog.CatalogException
+import com.moviehub.gateway.catalog.FailureKind
 import com.moviehub.gateway.catalog.MovieInputDto
 import com.moviehub.gateway.catalog.PageDto
 import com.moviehub.gateway.catalog.Role
-import com.moviehub.gateway.catalog.CatalogException
-import com.moviehub.gateway.catalog.FailureKind
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.mockito.kotlin.any
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.graphql.tester.AutoConfigureHttpGraphQlTester
 import org.springframework.boot.test.context.SpringBootTest
@@ -24,13 +24,18 @@ import kotlin.test.assertEquals
 class GraphQlApiTest {
 
     @Autowired lateinit var tester: HttpGraphQlTester
+
     @MockitoBean lateinit var catalog: CatalogClient
 
     @Test
     fun `movies query uses schema defaults and maps the page`() {
-        whenever(catalog.listMovies(any(), any(), any())).thenReturn(PageDto(listOf(Fixtures.movie(artwork = "/api/movies/m1/artwork?v=2")), 25, 0, 12))
+        whenever(
+            catalog.listMovies(any(), any(), any()),
+        ).thenReturn(PageDto(listOf(Fixtures.movie(artwork = "/api/movies/m1/artwork?v=2")), 25, 0, 12))
 
-        tester.document("{ movies { total totalPages page pageSize items { id title artworkUrl genres credits { personName role characterName } } } }")
+        tester.document(
+            "{ movies { total totalPages page pageSize items { id title artworkUrl genres credits { personName role characterName } } } }",
+        )
             .execute()
             .path("movies.total").entity(Int::class.java).isEqualTo(25)
             .path("movies.totalPages").entity(Int::class.java).isEqualTo(3)
@@ -82,7 +87,11 @@ class GraphQlApiTest {
     fun `validation failures surface as BAD_REQUEST with a code extension`() {
         whenever(catalog.createMovie(any())).thenThrow(CatalogException(FailureKind.INVALID, "title must not be blank"))
         tester.document("""mutation { createMovie(input: {title: "", releaseYear: 2000}) { id } }""")
-            .execute().errors().expect { it.message == "title must not be blank" && it.extensions["code"] == "INVALID" && it.errorType.toString() == "BAD_REQUEST" }
+            .execute().errors().expect {
+                it.message == "title must not be blank" &&
+                    it.extensions["code"] == "INVALID" &&
+                    it.errorType.toString() == "BAD_REQUEST"
+            }
             .verify()
     }
 
@@ -110,4 +119,3 @@ class GraphQlApiTest {
             .path("b").entity(Boolean::class.java).isEqualTo(true)
     }
 }
-

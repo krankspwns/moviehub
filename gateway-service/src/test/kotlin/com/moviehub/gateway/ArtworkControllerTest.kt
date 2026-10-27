@@ -24,6 +24,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 class ArtworkControllerTest {
 
     @Autowired lateinit var mvc: MockMvc
+
     @MockitoBean lateinit var catalog: CatalogClient
 
     private val png = MockMultipartFile("file", "a.png", "image/png", byteArrayOf(1, 2, 3, 4))
@@ -105,4 +106,3 @@ class ArtworkControllerTest {
         mvc.perform(get("/api/movies/none/artwork")).andExpect(status().isNotFound)
     }
 }
-

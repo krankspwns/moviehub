@@ -63,4 +63,3 @@ fun PersonEntity.toView() = PersonView(
     hasAvatar = avatarContentType != null,
     avatarVersion = avatarVersion,
 )
-

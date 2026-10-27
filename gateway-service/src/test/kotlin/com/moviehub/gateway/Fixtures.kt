@@ -45,8 +45,7 @@ open class FakeCatalogClient : CatalogClient {
     override fun createMovie(input: MovieInputDto) = Fixtures.movie(title = input.title)
     override fun updateMovie(id: String, input: MovieInputDto) = Fixtures.movie(id, input.title)
     override fun deleteMovie(id: String) = true
-    override fun listPeople(query: String, role: Role?, page: Int, pageSize: Int) =
-        PageDto(listOf(Fixtures.person()), 1, page, pageSize)
+    override fun listPeople(query: String, role: Role?, page: Int, pageSize: Int) = PageDto(listOf(Fixtures.person()), 1, page, pageSize)
     override fun getPerson(id: String) = Fixtures.person(id)
     override fun createPerson(input: PersonInputDto) = Fixtures.person(name = input.name)
     override fun updatePerson(id: String, input: PersonInputDto) = Fixtures.person(id, input.name)
@@ -62,4 +61,3 @@ open class FakeCatalogClient : CatalogClient {
 
 fun notFound(message: String = "not found") = CatalogException(FailureKind.NOT_FOUND, message)
 fun invalid(message: String = "bad input") = CatalogException(FailureKind.INVALID, message)
-

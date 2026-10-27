@@ -53,4 +53,3 @@ class ArtworkController(private val catalog: CatalogClient) {
             .body(StreamingResponseBody { out -> artwork.chunks.forEach(out::write) })
     }
 }
-

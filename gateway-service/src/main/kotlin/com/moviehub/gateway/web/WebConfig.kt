@@ -49,4 +49,3 @@ class CorsConfig(private val properties: CorsProperties) : WebMvcConfigurer {
         registry.addMapping("/api/**").allowedOrigins(*origins).allowedMethods("GET", "POST", "OPTIONS")
     }
 }
-

@@ -21,6 +21,7 @@ import kotlin.test.assertTrue
 class PersonServiceTest : IntegrationTestBase() {
 
     @Autowired lateinit var people: PersonService
+
     @Autowired lateinit var movies: MovieService
 
     private fun movie(title: String, vararg credits: CreditCommand) =
@@ -128,7 +129,9 @@ class PersonServiceTest : IntegrationTestBase() {
 class SearchServiceTest : IntegrationTestBase() {
 
     @Autowired lateinit var search: SearchService
+
     @Autowired lateinit var people: PersonService
+
     @Autowired lateinit var movies: MovieService
 
     @Test
@@ -164,4 +167,3 @@ class SearchServiceTest : IntegrationTestBase() {
         assertEquals(3, search.search("star", 3).movies.size)
     }
 }
-

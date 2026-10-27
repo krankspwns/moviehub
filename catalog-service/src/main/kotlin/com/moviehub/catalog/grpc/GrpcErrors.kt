@@ -28,4 +28,3 @@ class GrpcExceptionAdvice {
     @GrpcExceptionHandler(Exception::class)
     fun unexpected(e: Exception): Status = e.toStatus()
 }
-

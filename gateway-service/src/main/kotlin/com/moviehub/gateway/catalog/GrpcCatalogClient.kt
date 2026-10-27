@@ -111,9 +111,15 @@ class GrpcCatalogClient(
         val result = CompletableFuture<ArtworkInfo>()
         val requests = async.uploadArtwork(object : StreamObserver<ArtworkInfo> {
             private var last: ArtworkInfo? = null
-            override fun onNext(value: ArtworkInfo) { last = value }
-            override fun onError(t: Throwable) { result.completeExceptionally(t) }
-            override fun onCompleted() { last?.let(result::complete) ?: result.completeExceptionally(IllegalStateException("no response")) }
+            override fun onNext(value: ArtworkInfo) {
+                last = value
+            }
+            override fun onError(t: Throwable) {
+                result.completeExceptionally(t)
+            }
+            override fun onCompleted() {
+                last?.let(result::complete) ?: result.completeExceptionally(IllegalStateException("no response"))
+            }
         })
         try {
             requests.onNext(
@@ -135,20 +141,32 @@ class GrpcCatalogClient(
         val info = try {
             result.get(properties.uploadTimeout.toMillis(), TimeUnit.MILLISECONDS)
         } catch (e: ExecutionException) {
-            throw (e.cause ?: e).let { if (it is StatusRuntimeException) it.toCatalogException() else CatalogException(FailureKind.INTERNAL, "Upload failed", it) }
+            throw (e.cause ?: e).let {
+                if (it is StatusRuntimeException) it.toCatalogException() else CatalogException(FailureKind.INTERNAL, "Upload failed", it)
+            }
         } catch (e: TimeoutException) {
             throw CatalogException(FailureKind.UNAVAILABLE, "Artwork upload timed out", e)
         }
-        val url = if (kind == ArtworkKind.ARTWORK_KIND_PERSON) avatarUrl(info.movieId, info.artworkVersion) else artworkUrl(info.movieId, info.artworkVersion)
+        val url = if (kind ==
+            ArtworkKind.ARTWORK_KIND_PERSON
+        ) {
+            avatarUrl(info.movieId, info.artworkVersion)
+        } else {
+            artworkUrl(info.movieId, info.artworkVersion)
+        }
         return ArtworkInfoDto(info.movieId, info.contentType, info.sizeBytes, url)
     }
 
     override fun downloadArtwork(movieId: String): ArtworkDownload = call {
-        download(movieId) { blocking.withDeadlineAfter(properties.uploadTimeout.toMillis(), TimeUnit.MILLISECONDS).downloadArtwork(idOf(movieId)) }
+        download(movieId) {
+            blocking.withDeadlineAfter(properties.uploadTimeout.toMillis(), TimeUnit.MILLISECONDS).downloadArtwork(idOf(movieId))
+        }
     }
 
     override fun downloadAvatar(personId: String): ArtworkDownload = call {
-        download(personId) { blocking.withDeadlineAfter(properties.uploadTimeout.toMillis(), TimeUnit.MILLISECONDS).downloadAvatar(idOf(personId)) }
+        download(personId) {
+            blocking.withDeadlineAfter(properties.uploadTimeout.toMillis(), TimeUnit.MILLISECONDS).downloadAvatar(idOf(personId))
+        }
     }
 
     private fun download(id: String, open: () -> Iterator<ArtworkChunk>): ArtworkDownload {
@@ -157,15 +175,19 @@ class GrpcCatalogClient(
         val contentType = first.contentType
         val chunks = object : Iterator<ByteArray> {
             private var pending: ByteArray? = first.data.toByteArray()
-            override fun hasNext(): Boolean = pending != null || try {
-                stream.hasNext()
-            } catch (e: StatusRuntimeException) {
-                log.warn("Image stream for {} failed mid-way: {}", id, e.status)
-                throw e.toCatalogException()
-            }
+            override fun hasNext(): Boolean = pending != null ||
+                try {
+                    stream.hasNext()
+                } catch (e: StatusRuntimeException) {
+                    log.warn("Image stream for {} failed mid-way: {}", id, e.status)
+                    throw e.toCatalogException()
+                }
 
             override fun next(): ByteArray {
-                pending?.let { pending = null; return it }
+                pending?.let {
+                    pending = null
+                    return it
+                }
                 return stream.next().data.toByteArray()
             }
         }
@@ -252,4 +274,3 @@ class GrpcCatalogClient(
         const val DEFAULT_PAGE_SIZE = 20
     }
 }
-

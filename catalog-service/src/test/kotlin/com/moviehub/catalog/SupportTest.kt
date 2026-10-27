@@ -35,4 +35,3 @@ class SupportTest {
         assertThrows<ValidationException> { pageRequest(0, -1, Sort.unsorted()) }
     }
 }
-

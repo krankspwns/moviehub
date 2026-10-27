@@ -28,7 +28,6 @@ import java.util.UUID
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
 
 /** Runs the real [GrpcCatalogClient] against an in-process fake catalog server. */
 class GrpcCatalogClientTest {
@@ -44,7 +43,9 @@ class GrpcCatalogClientTest {
             if (r.query == "down") return o.onError(Status.UNAVAILABLE.asRuntimeException())
             o.onNext(
                 ListMoviesResponse.newBuilder().setTotal(41)
-                    .addMovies(Movie.newBuilder().setId("m1").setTitle("Heat").setHasArtwork(true).setArtworkVersion(7).setCreatedAtEpochMs(0)).build(),
+                    .addMovies(
+                        Movie.newBuilder().setId("m1").setTitle("Heat").setHasArtwork(true).setArtworkVersion(7).setCreatedAtEpochMs(0),
+                    ).build(),
             )
             o.onCompleted()
         }
@@ -59,7 +60,11 @@ class GrpcCatalogClientTest {
             }
             override fun onError(t: Throwable) {}
             override fun onCompleted() {
-                o.onNext(ArtworkInfo.newBuilder().setMovieId("m1").setContentType(uploadedType).setSizeBytes(received.size().toLong()).setArtworkVersion(2).build())
+                o.onNext(
+                    ArtworkInfo.newBuilder().setMovieId(
+                        "m1",
+                    ).setContentType(uploadedType).setSizeBytes(received.size().toLong()).setArtworkVersion(2).build(),
+                )
                 o.onCompleted()
             }
         }
@@ -145,5 +150,3 @@ class GrpcCatalogClientTest {
         assertEquals(FailureKind.NOT_FOUND, assertThrows<CatalogException> { client.downloadArtwork("none") }.kind)
     }
 }
-
-

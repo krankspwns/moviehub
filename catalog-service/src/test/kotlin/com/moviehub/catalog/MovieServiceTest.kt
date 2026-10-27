@@ -19,6 +19,7 @@ import kotlin.test.assertTrue
 class MovieServiceTest : IntegrationTestBase() {
 
     @Autowired lateinit var movies: MovieService
+
     @Autowired lateinit var people: PersonService
 
     private fun command(
@@ -261,4 +262,3 @@ class MovieServiceTest : IntegrationTestBase() {
         assertEquals(0, movies.list("!", 0, 10).total)
     }
 }
-

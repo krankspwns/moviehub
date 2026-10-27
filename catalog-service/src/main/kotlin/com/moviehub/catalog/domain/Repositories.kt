@@ -37,12 +37,7 @@ interface PersonRepository : JpaRepository<PersonEntity, String> {
           and exists (select 1 from CreditEntity c where c.person = p and c.role = :role)
         """,
     )
-    fun searchByRole(
-        @Param("pattern") pattern: String,
-        @Param("role") role: Role,
-        pageable: Pageable,
-    ): Page<PersonEntity>
+    fun searchByRole(@Param("pattern") pattern: String, @Param("role") role: Role, pageable: Pageable): Page<PersonEntity>
 }
 
 interface CreditRepository : JpaRepository<CreditEntity, String>
-

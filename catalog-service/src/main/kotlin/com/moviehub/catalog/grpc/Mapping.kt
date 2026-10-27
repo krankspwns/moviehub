@@ -79,4 +79,3 @@ fun MovieInput.toCommand() = MovieCommand(
 )
 
 fun PersonInput.toCommand() = PersonCommand(name = name, bio = bio, birthDate = birthDate)
-

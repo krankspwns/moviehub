@@ -33,12 +33,8 @@ class CatalogGraphQlController(private val catalog: CatalogClient) {
     fun movie(@Argument id: String): MovieDto? = nullIfMissing { catalog.getMovie(id) }
 
     @QueryMapping
-    fun people(
-        @Argument query: String?,
-        @Argument role: Role?,
-        @Argument page: Int,
-        @Argument pageSize: Int,
-    ): PageDto<PersonDto> = catalog.listPeople(query.orEmpty(), role, page, pageSize)
+    fun people(@Argument query: String?, @Argument role: Role?, @Argument page: Int, @Argument pageSize: Int): PageDto<PersonDto> =
+        catalog.listPeople(query.orEmpty(), role, page, pageSize)
 
     @QueryMapping
     fun person(@Argument id: String): PersonDto? = nullIfMissing { catalog.getPerson(id) }
@@ -91,4 +87,3 @@ class CatalogExceptionResolver : DataFetcherExceptionResolverAdapter() {
             .build()
     }
 }
-

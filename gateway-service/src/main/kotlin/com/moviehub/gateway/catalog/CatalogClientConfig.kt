@@ -8,10 +8,7 @@ import org.springframework.context.annotation.Configuration
 import java.time.Duration
 
 @ConfigurationProperties("moviehub.catalog")
-data class CatalogProperties(
-    val callTimeout: Duration = Duration.ofSeconds(10),
-    val uploadTimeout: Duration = Duration.ofSeconds(60),
-)
+data class CatalogProperties(val callTimeout: Duration = Duration.ofSeconds(10), val uploadTimeout: Duration = Duration.ofSeconds(60))
 
 /** Exposes the channel-backed stubs for the "catalog" client (see `grpc.client.catalog.*`) as beans. */
 @Configuration
@@ -26,4 +23,3 @@ data class CatalogProperties(
     client = GrpcClient("catalog"),
 )
 class CatalogClientConfig
-

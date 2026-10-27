@@ -14,11 +14,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeParseException
 
 @Service
-class PersonService(
-    private val people: PersonRepository,
-    private val artworkStorage: ArtworkStorage,
-    private val clock: Clock,
-) {
+class PersonService(private val people: PersonRepository, private val artworkStorage: ArtworkStorage, private val clock: Clock) {
 
     @Transactional(readOnly = true)
     fun list(query: String, role: Role?, page: Int, size: Int): PageView<PersonView> {
@@ -65,8 +61,7 @@ class PersonService(
         return true
     }
 
-    private fun find(id: String): PersonEntity =
-        people.findById(id).orElseThrow { NotFoundException("Person $id not found") }
+    private fun find(id: String): PersonEntity = people.findById(id).orElseThrow { NotFoundException("Person $id not found") }
 
     private fun validate(command: PersonCommand): PersonCommand {
         val name = command.name.trim()
@@ -90,4 +85,3 @@ class PersonService(
         return date
     }
 }
-

@@ -73,8 +73,7 @@ class MovieService(
         return true
     }
 
-    private fun find(id: String): MovieEntity =
-        movies.findById(id).orElseThrow { NotFoundException("Movie $id not found") }
+    private fun find(id: String): MovieEntity = movies.findById(id).orElseThrow { NotFoundException("Movie $id not found") }
 
     /**
      * Diff-based credit synchronisation. Replacing the collection wholesale would make
@@ -135,4 +134,3 @@ class MovieService(
         return command.copy(title = title, synopsis = synopsis, genres = genres, credits = credits)
     }
 }
-

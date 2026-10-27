@@ -26,4 +26,3 @@ interface CatalogClient {
 
     fun downloadAvatar(personId: String): ArtworkDownload
 }
-

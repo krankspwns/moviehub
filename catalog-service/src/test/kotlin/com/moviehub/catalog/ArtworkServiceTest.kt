@@ -20,22 +20,24 @@ import kotlin.test.assertTrue
 class ArtworkServiceTest : IntegrationTestBase() {
 
     @Autowired lateinit var artwork: ArtworkService
+
     @Autowired lateinit var storage: ArtworkStorage
+
     @Autowired lateinit var movies: MovieService
+
     @Autowired lateinit var people: PersonService
 
     private fun newMovie() = movies.create(MovieCommand("M", "", 2000, 0, emptyList(), emptyList())).id
 
-    private fun upload(movieId: String, type: String, vararg chunks: ByteArray) =
-        artwork.begin(movieId, type).let { up ->
-            try {
-                chunks.forEach(up::write)
-                artwork.complete(up)
-            } catch (e: Exception) {
-                artwork.abort(up)
-                throw e
-            }
+    private fun upload(movieId: String, type: String, vararg chunks: ByteArray) = artwork.begin(movieId, type).let { up ->
+        try {
+            chunks.forEach(up::write)
+            artwork.complete(up)
+        } catch (e: Exception) {
+            artwork.abort(up)
+            throw e
         }
+    }
 
     @Test
     fun `upload stores file, flags the movie and bumps the version`() {

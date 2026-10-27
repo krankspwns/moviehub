@@ -25,7 +25,9 @@ import java.nio.file.Path
 abstract class IntegrationTestBase {
 
     @Autowired lateinit var movieRepository: MovieRepository
+
     @Autowired lateinit var personRepository: PersonRepository
+
     @Autowired lateinit var creditRepository: CreditRepository
 
     @BeforeEach
@@ -53,4 +55,3 @@ object Images {
     val PNG = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 1, 2, 3)
     val WEBP = "RIFF".toByteArray() + byteArrayOf(1, 2, 3, 4) + "WEBP".toByteArray() + byteArrayOf(9)
 }
-

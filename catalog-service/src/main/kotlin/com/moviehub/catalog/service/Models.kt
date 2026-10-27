@@ -6,12 +6,7 @@ import java.time.LocalDate
 
 // ---- Read models (built inside a transaction so callers never touch lazy entities) ----
 
-data class CreditView(
-    val personId: String,
-    val personName: String,
-    val role: Role,
-    val characterName: String,
-)
+data class CreditView(val personId: String, val personName: String, val role: Role, val characterName: String)
 
 data class MovieView(
     val id: String,
@@ -27,11 +22,7 @@ data class MovieView(
     val updatedAt: Instant,
 )
 
-data class FilmographyEntry(
-    val movieId: String,
-    val title: String,
-    val role: Role,
-)
+data class FilmographyEntry(val movieId: String, val title: String, val role: Role)
 
 data class PersonView(
     val id: String,
@@ -47,20 +38,11 @@ data class PageView<T>(val items: List<T>, val total: Long)
 
 data class SearchResult(val movies: List<MovieView>, val people: List<PersonView>)
 
-data class ArtworkInfoView(
-    val movieId: String,
-    val contentType: String,
-    val sizeBytes: Long,
-    val version: Long,
-)
+data class ArtworkInfoView(val movieId: String, val contentType: String, val sizeBytes: Long, val version: Long)
 
 // ---- Commands ----
 
-data class CreditCommand(
-    val personId: String,
-    val role: Role,
-    val characterName: String = "",
-)
+data class CreditCommand(val personId: String, val role: Role, val characterName: String = "")
 
 data class MovieCommand(
     val title: String,
@@ -77,4 +59,3 @@ data class PersonCommand(
     /** ISO-8601 date (yyyy-MM-dd) or blank when unknown. */
     val birthDate: String = "",
 )
-
