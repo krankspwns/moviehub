@@ -3,6 +3,9 @@
 | Path | Responsibility |
 |---|---|
 | `src/lib/api/catalog.ts` | ALL network code: typed GraphQL client (variables only, never string-interpolated input), error mapping, XHR artwork upload with progress |
+| `src/lib/components/` | `Icon`, `IconButton`, `MovieCard`, `PersonCard` (icon edit/delete actions) |
+| `src/lib/format.ts` | Pure helpers: `artworkSrc`, `roleLabel`, `initials`, `hue` |
+| `src/style.css` | Mobile-first responsive styles (breakpoints 640 / 1024 / 1440) |
 | `src/App.svelte` | Current UI (tabs, lists, search, dialogs). Large; when adding substantial UI, extract components into `src/lib/components/` and shared state into `src/lib/state/` instead of growing this file |
 | `src/style.css` | Global responsive styles |
 | `src/lib/__tests__/` | Vitest + Testing Library (`catalog.test.ts` API, `App.test.ts` UI). Setup: `src/test-setup.ts` |
@@ -14,4 +17,5 @@ Rules
 - Match the existing Svelte style (`onclick=` attributes, `bind:`); do not mix in new patterns without migrating.
 - `typescript` stays at `~5.9` (svelte-check compatibility).
 - Verify: `npm run check && npm test && npm run build`.
+
 
