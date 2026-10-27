@@ -15,6 +15,7 @@
     type Role,
   } from './lib/api/catalog';
   import { errorMessage, roleLabel } from './lib/format';
+  import ConfirmDialog from './lib/components/ConfirmDialog.svelte';
   import Header, { type Tab } from './lib/components/Header.svelte';
   import Icon from './lib/components/Icon.svelte';
   import MovieCard from './lib/components/MovieCard.svelte';
@@ -24,6 +25,7 @@
   import PersonDetails from './lib/components/PersonDetails.svelte';
   import PersonEditor from './lib/components/PersonEditor.svelte';
   import SearchResults from './lib/components/SearchResults.svelte';
+  import Toast from './lib/components/Toast.svelte';
   import { readSaved, readSavedPeople, toggleSaved, writeSaved, writeSavedPeople } from './lib/state/saved';
   import { applyTheme, nextTheme, readTheme, writeTheme, type Theme } from './lib/state/theme';
 
@@ -41,6 +43,7 @@
   let busy = $state(false);
   let error = $state('');
   let notice = $state('');
+  let pendingDelete = $state<{ kind: 'movie' | 'person'; id: string; name: string } | null>(null);
   let requestId = 0; // guards against out-of-order responses
   let timer: ReturnType<typeof setTimeout>;
 
@@ -168,9 +171,13 @@
     void load();
   }
 
-  async function remove(kind: 'movie' | 'person', id: string, name: string) {
-    const extra = kind === 'person' ? ' and will remove their movie credits' : '';
-    if (!confirm(`Delete ${name}? This cannot be undone${extra}.`)) return;
+  function askDelete(kind: 'movie' | 'person', id: string, name: string) {
+    pendingDelete = { kind, id, name };
+  }
+
+  async function confirmDelete() {
+    if (!pendingDelete) return;
+    const { kind, id, name } = pendingDelete;
     busy = true;
     error = '';
     notice = '';
@@ -192,6 +199,7 @@
       error = errorMessage(e);
     } finally {
       busy = false;
+      pendingDelete = null;
     }
   }
 </script>
@@ -254,7 +262,6 @@
     </div>
   {/if}
 
-  {#if notice}<p class="alert success" role="status">{notice}</p>{/if}
   {#if error}<div class="alert failure" role="alert">
       <span>{error}</span> <button onclick={() => void load()}>Retry</button>
     </div>{/if}
@@ -281,7 +288,7 @@
             ontoggle={() => toggleSave(movie)}
             onopen={() => (viewMovie = movie)}
             onedit={() => openMovie(movie)}
-            ondelete={() => void remove('movie', movie.id, movie.title)}
+            ondelete={() => askDelete('movie', movie.id, movie.title)}
           />
         {/each}
       </div>
@@ -305,7 +312,7 @@
               ontoggle={() => toggleSave(movie)}
               onopen={() => (viewMovie = movie)}
               onedit={() => openMovie(movie)}
-              ondelete={() => void remove('movie', movie.id, movie.title)}
+              ondelete={() => askDelete('movie', movie.id, movie.title)}
             />
           {/each}
         </div>
@@ -321,7 +328,7 @@
               ontoggle={() => toggleSavePerson(person)}
               onopen={() => (viewPerson = person)}
               onedit={() => openPerson(person)}
-              ondelete={() => void remove('person', person.id, person.name)}
+              ondelete={() => askDelete('person', person.id, person.name)}
             />
           {/each}
         </div>
@@ -343,7 +350,7 @@
             ontoggle={() => toggleSavePerson(person)}
             onopen={() => (viewPerson = person)}
             onedit={() => openPerson(person)}
-            ondelete={() => void remove('person', person.id, person.name)}
+            ondelete={() => askDelete('person', person.id, person.name)}
           />
         {/each}
       </div>
@@ -385,6 +392,20 @@
     {/if}
   {/if}
 </main>
+
+{#if notice}<Toast message={notice} onclose={() => (notice = '')} />{/if}
+
+{#if pendingDelete}
+  <ConfirmDialog
+    title="Delete {pendingDelete.name}?"
+    message={pendingDelete.kind === 'person'
+      ? 'This cannot be undone. Their credits will also be removed from every movie.'
+      : 'This cannot be undone. The movie and its artwork will be removed.'}
+    {busy}
+    onconfirm={() => void confirmDelete()}
+    oncancel={() => (pendingDelete = null)}
+  />
+{/if}
 
 {#if editor === 'movie'}
   <MovieEditor movie={editorMovie} onsaved={() => saved('Movie')} onclose={() => (editor = null)} />

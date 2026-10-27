@@ -1489,3 +1489,80 @@ textarea[aria-invalid='true'] {
   background: transparent;
   border-color: rgb(255 255 255 / 0.3);
 }
+
+/* ---------- Toast and confirm dialog ---------- */
+.toast {
+  position: fixed;
+  top: 76px;
+  left: 50%;
+  z-index: 60;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: min(440px, calc(100vw - 32px));
+  padding: 12px 14px 12px 16px;
+  transform: translateX(-50%);
+  color: var(--success-text);
+  background: var(--bg-elev);
+  border: 1px solid rgb(74 222 154 / 0.45);
+  border-left-width: 4px;
+  border-radius: 12px;
+  box-shadow: 0 14px 36px var(--shadow-strong);
+  animation: toast-in 0.22s ease-out;
+}
+.toast span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.toast button {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+}
+.toast button:hover {
+  background: var(--surface-2);
+}
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -8px);
+  }
+}
+@media (min-width: 1024px) {
+  .toast {
+    top: 84px;
+  }
+}
+.confirm-backdrop {
+  align-items: center;
+  padding: 20px;
+}
+.confirm-backdrop .dialog {
+  max-width: 420px;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: 0 30px 90px var(--shadow-strong);
+}
+.confirm h2 {
+  margin: 0 0 8px;
+  font-size: 1.2rem;
+  overflow-wrap: anywhere;
+}
+.confirm p {
+  margin: 0 0 20px;
+  color: var(--text-soft);
+  line-height: 1.5;
+}
+.primary.danger-btn {
+  background: var(--danger);
+  color: #240606;
+}
