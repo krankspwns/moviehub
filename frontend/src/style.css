@@ -1128,6 +1128,12 @@ progress {
 
 /* ---------- Clickable cards and detail popup ---------- */
 .card-link {
+  display: -webkit-box;
+  max-width: 100%;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow-wrap: anywhere;
   padding: 0;
   margin: 0;
   background: none;
