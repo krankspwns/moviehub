@@ -19,7 +19,7 @@ Catalog (Spring Boot / Kotlin, gRPC :9090)
 
 GraphQL is used for all structured frontend/backend data. Artwork uses a small HTTP endpoint because GraphQL does not natively transport binary files and `XMLHttpRequest` provides upload progress. The gateway communicates with the catalog **only by gRPC**. Images are served through the gateway at the relative URL returned by the movie query. No external API keys or services are required.
 
-Features: paginated movie and person lists; movie/person create, update and delete; credits with actor/creator roles and filmography; searches across movies and people; genre and role filtering; artwork upload with progress and cache-busted display; avatar photos for cast and creators; a **Saved** list (bookmark movies, stored in the browser's localStorage, so it is per browser and not shared); a violet/pink theme with a custom favicon; loading, empty, success and error states.
+Features: paginated movie and person lists; movie/person create, update and delete; credits with actor/creator roles and filmography; searches across movies and people; genre and role filtering; artwork upload with progress and cache-busted display; avatar photos for cast and creators; click-through detail popups for movies (creators, cast and characters) and people (bio, filmography); a **Saved** list (bookmark movies, stored in the browser's localStorage, so it is per browser and not shared); a violet/pink theme with a custom favicon; loading, empty, success and error states.
 
 ## Prerequisites
 
