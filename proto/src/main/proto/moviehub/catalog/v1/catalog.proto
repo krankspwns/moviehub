@@ -1,0 +1,173 @@
+syntax = "proto3";
+
+package moviehub.catalog.v1;
+
+option java_multiple_files = true;
+option java_package = "com.moviehub.catalog.grpc";
+option java_outer_classname = "CatalogProto";
+
+// Internal contract between the gateway-service (GraphQL/HTTP edge) and the
+// catalog-service (system of record for movies, people and artwork).
+service CatalogService {
+  // Movies
+  rpc ListMovies(ListMoviesRequest) returns (ListMoviesResponse);
+  rpc GetMovie(GetByIdRequest) returns (Movie);
+  rpc CreateMovie(MovieInput) returns (Movie);
+  rpc UpdateMovie(UpdateMovieRequest) returns (Movie);
+  rpc DeleteMovie(GetByIdRequest) returns (DeleteResponse);
+
+  // Cast & creators
+  rpc ListPeople(ListPeopleRequest) returns (ListPeopleResponse);
+  rpc GetPerson(GetByIdRequest) returns (Person);
+  rpc CreatePerson(PersonInput) returns (Person);
+  rpc UpdatePerson(UpdatePersonRequest) returns (Person);
+  rpc DeletePerson(GetByIdRequest) returns (DeleteResponse);
+
+  // Search across movies and people
+  rpc Search(SearchRequest) returns (SearchResponse);
+
+  // Artwork (chunked so large files never need to be fully buffered)
+  rpc UploadArtwork(stream UploadArtworkRequest) returns (ArtworkInfo);
+  rpc DownloadArtwork(GetByIdRequest) returns (stream ArtworkChunk);
+}
+
+enum Role {
+  ROLE_UNSPECIFIED = 0;
+  ROLE_ACTOR = 1;
+  ROLE_DIRECTOR = 2;
+  ROLE_WRITER = 3;
+  ROLE_PRODUCER = 4;
+  ROLE_COMPOSER = 5;
+}
+
+message GetByIdRequest {
+  string id = 1;
+}
+
+message DeleteResponse {
+  bool deleted = 1;
+}
+
+message Credit {
+  string person_id = 1;
+  string person_name = 2;
+  Role role = 3;
+  string character_name = 4; // only meaningful for ROLE_ACTOR
+}
+
+message CreditInput {
+  string person_id = 1;
+  Role role = 2;
+  string character_name = 3;
+}
+
+message Movie {
+  string id = 1;
+  string title = 2;
+  string synopsis = 3;
+  int32 release_year = 4;
+  int32 runtime_minutes = 5;
+  repeated string genres = 6;
+  bool has_artwork = 7;
+  int64 artwork_version = 8; // changes whenever artwork changes (cache busting)
+  repeated Credit credits = 9;
+  int64 created_at_epoch_ms = 10;
+  int64 updated_at_epoch_ms = 11;
+}
+
+message MovieInput {
+  string title = 1;
+  string synopsis = 2;
+  int32 release_year = 3;
+  int32 runtime_minutes = 4;
+  repeated string genres = 5;
+  repeated CreditInput credits = 6;
+}
+
+message UpdateMovieRequest {
+  string id = 1;
+  MovieInput movie = 2;
+}
+
+message ListMoviesRequest {
+  string query = 1;
+  int32 page = 2;      // zero based
+  int32 page_size = 3;
+}
+
+message ListMoviesResponse {
+  repeated Movie movies = 1;
+  int64 total = 2;
+}
+
+message PersonMovie {
+  string movie_id = 1;
+  string title = 2;
+  Role role = 3;
+}
+
+message Person {
+  string id = 1;
+  string name = 2;
+  string bio = 3;
+  string birth_date = 4; // ISO-8601 (yyyy-MM-dd) or empty
+  repeated PersonMovie filmography = 5;
+}
+
+message PersonInput {
+  string name = 1;
+  string bio = 2;
+  string birth_date = 3;
+}
+
+message UpdatePersonRequest {
+  string id = 1;
+  PersonInput person = 2;
+}
+
+message ListPeopleRequest {
+  string query = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+  Role role = 4; // ROLE_UNSPECIFIED = any role
+}
+
+message ListPeopleResponse {
+  repeated Person people = 1;
+  int64 total = 2;
+}
+
+message SearchRequest {
+  string query = 1;
+  int32 limit = 2;
+}
+
+message SearchResponse {
+  repeated Movie movies = 1;
+  repeated Person people = 2;
+}
+
+message ArtworkMetadata {
+  string movie_id = 1;
+  string content_type = 2;
+}
+
+message UploadArtworkRequest {
+  oneof payload {
+    ArtworkMetadata metadata = 1; // must be the first message
+    bytes chunk = 2;
+  }
+}
+
+message ArtworkInfo {
+  string movie_id = 1;
+  string content_type = 2;
+  int64 size_bytes = 3;
+  int64 artwork_version = 4;
+}
+
+message ArtworkChunk {
+  string content_type = 1; // set on the first chunk only
+  bytes data = 2;
+}
+
