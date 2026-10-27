@@ -28,6 +28,7 @@ Svelte+TypeScript frontend; ≥2 Kotlin Spring Boot services; service↔service 
 ## Commands
 
 ```sh
+./setup.sh [check|install|start|stop|test] [--yes]   # bootstrap + run everything; logs in .run/
 export JAVA_HOME=$(/usr/libexec/java_home -v 21)   # Gradle 8.14 does not run on JDK 26
 ./gradlew test                                      # all backend tests
 ./gradlew :catalog-service:test                     # one module (preferred; cheaper)
@@ -59,4 +60,5 @@ Run only the checks for the module you changed. Run everything before the final 
 3. Read the nested `AGENTS.md` of one module, then only the files named there.
 4. Delegate independent module work in parallel; give each sub-task its module, the contract it relies on, and the test command.
 5. Report results briefly: files changed, commands run, pass/fail.
+
 

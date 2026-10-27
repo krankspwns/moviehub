@@ -27,12 +27,20 @@ Features: paginated movie and person lists; movie/person create, update and dele
 - Node.js compatible with Vite 8 (Node.js 20.19+ or 22.12+) and npm.
 - No separate database installation is needed. The Gradle wrapper is included.
 
-## Run locally
+## Quick start (one command)
+
+```sh
+./setup.sh
+```
+
+Checks for JDK 21, Node.js 22+ and curl, offers to install anything missing (Homebrew on macOS; apt or dnf on Linux), installs dependencies, then starts all three parts and prints <http://localhost:5173>. Press Ctrl-C to stop. Other commands: `./setup.sh check | install | start | stop | test`; add `--yes` to skip install prompts. On Windows, run it inside WSL. Logs are written to `.run/`.
+
+## Run manually
 
 From the repository root, use **three terminals**:
 
 ```sh
-# Terminal 1: gRPC catalog (creates ./data automatically)
+# Terminal 1: gRPC catalog (creates catalog-service/data automatically)
 ./gradlew :catalog-service:bootRun
 
 # Terminal 2: GraphQL gateway and artwork HTTP API
@@ -48,7 +56,7 @@ Open <http://localhost:5173>. Vite proxies `/graphql` and `/api` to the gateway 
 
 If Gradle cannot download dependencies due to a `PKIX path building failed` error behind an HTTPS-inspecting company proxy, configure your JDK with the proxy's trusted CA. Do not disable TLS verification or commit private certificates. Both services use gRPC 1.68.3 via the gRPC BOM to keep the runtime compatible with the generated protobuf stubs.
 
-To reset local data **after stopping the services**, remove the root `data/` directory. It contains the H2 database and uploaded artwork and is excluded from Git. The app does not ship with sample data: add a person in **Cast & creators**, then add a movie and optionally assign credits or upload artwork. Image uploads accept JPEG, PNG and WebP up to 5 MB.
+To reset local data **after stopping the services**, remove the `catalog-service/data/` directory. It contains the H2 database and uploaded artwork and is excluded from Git. The app does not ship with sample data: add a person in **Cast & creators**, then add a movie and optionally assign credits or upload artwork. Image uploads accept JPEG, PNG and WebP up to 5 MB.
 
 ## Validation
 
@@ -70,5 +78,8 @@ GitHub Copilot was used as a productivity aid to draft implementation code, test
 ## Limitations
 
 This is a local assessment application: there is no authentication or production deployment configuration. Artwork is stored on the local filesystem. For production use, add authentication/authorization, durable object storage, observability and deployment configuration.
+
+
+
 
 
