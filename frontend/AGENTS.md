@@ -3,7 +3,8 @@
 | Path | Responsibility |
 |---|---|
 | `src/lib/api/catalog.ts` | ALL network code: typed GraphQL client (variables only, never string-interpolated input), error mapping, XHR artwork upload with progress |
-| `src/lib/components/` | `Icon`, `IconButton`, `MovieCard`, `PersonCard` (icon edit/delete actions) |
+| `src/lib/components/` | `Icon`, `IconButton`, `Logo`, `MovieCard` (save/edit/delete icons), `PersonCard` (avatar, edit/delete) |
+| `src/lib/state/saved.ts` | Saved-movies list persisted in localStorage (`readSaved`, `writeSaved`, `toggleSaved`) |
 | `src/lib/format.ts` | Pure helpers: `artworkSrc`, `roleLabel`, `initials`, `hue` |
 | `src/style.css` | Mobile-first responsive styles (breakpoints 640 / 1024 / 1440) |
 | `src/App.svelte` | Current UI (tabs, lists, search, dialogs). Large; when adding substantial UI, extract components into `src/lib/components/` and shared state into `src/lib/state/` instead of growing this file |
