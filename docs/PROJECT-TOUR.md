@@ -91,7 +91,7 @@ Each layer has its own type, and a mapper between neighbours (`catalog.ts` types
 1. **UI** – `frontend/src/lib/components/MovieEditor.svelte` `submit()` checks the form with `lib/validate.ts`, then calls `saveMovie()` in `lib/api/catalog.ts`.
 2. **GraphQL** – the call hits `gateway-service/.../graphql/CatalogGraphQlController.kt`, shaped by `resources/graphql/schema.graphqls`.
 3. **Gateway client** – the controller calls `catalog/GrpcCatalogClient.kt`, which turns it into a gRPC request (`CreateMovie`).
-4. **gRPC server** – `catalog-service/.../grpc/CatalogGrpcService.kt` receives it, maps proto ⇄ domain types (`Mapping.kt`) and runs `grpc/RequestValidator.kt`, which enforces the title/year/runtime/genre/credit limits (failures become `INVALID_ARGUMENT`).
+4. **gRPC server** – `catalog-service/.../grpc/CatalogGrpcService.kt` receives it, maps proto ⇄ domain types (`Mapping.kt`) and runs `grpc/RequestValidator.kt`, which trims the input and hands it to the Spring `Validator`s `MovieCommandValidator` / `PersonCommandValidator` that enforce the title/year/runtime/genre/credit limits (failures become `INVALID_ARGUMENT`).
 5. **Business rules** – `service/MovieService.kt` checks what needs the database (for example that every credited person exists), then saves via `domain/Repositories.kt` (Spring Data) to `domain/Entities.kt` tables (created by `resources/db/migration/*.sql`).
 6. The result travels back up the same path; the UI reloads the list.
 
@@ -122,7 +122,7 @@ The browser uses `XMLHttpRequest` so it can show upload progress (`uploadImage()
 **catalog-service** (`com.moviehub.catalog`)
 - `domain/` – database entities, repositories, exceptions.
 - `service/` – persistence and database-backed rules: `MovieService`, `PersonService`, `SearchService`, `ArtworkService`, `ArtworkStorage`.
-- `grpc/` – the gRPC adapter: `CatalogGrpcService` plus `RequestValidator`, which validates and trims every create/update request before it reaches a service.
+- `grpc/` – the gRPC adapter: `CatalogGrpcService` plus `RequestValidator` (trims, then runs the Spring `Validator` implementations `MovieCommandValidator` and `PersonCommandValidator`) on every create/update before it reaches a service.
 - `resources/db/migration/` – Flyway SQL (V1 tables, V2 avatars). Add new `V3__…sql` files for schema changes; never edit old ones.
 
 **gateway-service** (`com.moviehub.gateway`)

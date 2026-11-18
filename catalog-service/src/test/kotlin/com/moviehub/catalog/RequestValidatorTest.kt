@@ -2,6 +2,8 @@ package com.moviehub.catalog
 
 import com.moviehub.catalog.domain.Role
 import com.moviehub.catalog.domain.ValidationException
+import com.moviehub.catalog.grpc.MovieCommandValidator
+import com.moviehub.catalog.grpc.PersonCommandValidator
 import com.moviehub.catalog.grpc.RequestValidator
 import com.moviehub.catalog.service.CreditCommand
 import com.moviehub.catalog.service.MovieCommand
@@ -16,7 +18,8 @@ import kotlin.test.assertEquals
 /** Plain unit tests: the validator needs no Spring context or database. */
 class RequestValidatorTest {
 
-    private val validator = RequestValidator(Clock.fixed(Instant.parse("2026-06-15T00:00:00Z"), ZoneOffset.UTC))
+    private val clock = Clock.fixed(Instant.parse("2026-06-15T00:00:00Z"), ZoneOffset.UTC)
+    private val validator = RequestValidator(MovieCommandValidator(clock), PersonCommandValidator(clock))
     private val maxYear = 2036
 
     private fun movie(
