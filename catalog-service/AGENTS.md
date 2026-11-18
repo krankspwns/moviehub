@@ -5,8 +5,8 @@ Package root: `src/main/kotlin/com/moviehub/catalog/`
 | Path | Responsibility |
 |---|---|
 | `domain/` | JPA entities, repositories, `NotFoundException`/`ValidationException` |
-| `service/` | Business rules + validation: `MovieService`, `PersonService`, `SearchService`, `ArtworkService`, `ArtworkStorage`, `Support.kt` (paging/LIKE helpers) |
-| `grpc/` | `CatalogGrpcService` (thin), `Mapping.kt` (domain↔proto), `GrpcErrors.kt` (exception→status) |
+| `service/` | Persistence and DB-backed rules (no field validation): `MovieService`, `PersonService`, `SearchService`, `ArtworkService`, `ArtworkStorage`, `Support.kt` (paging/LIKE helpers) |
+| `grpc/` | `CatalogGrpcService` (thin), `RequestValidator` (all field rules for movie/person create/update; add new field rules here and in `frontend/src/lib/validate.ts`), `Mapping.kt` (domain↔proto), `GrpcErrors.kt` (exception→status) |
 | `config/` | `Clock` bean (inject `Clock`, never call `now()` directly) |
 | `resources/db/migration/` | Flyway `V<n>__name.sql`; schema is `ddl-auto: validate`, so every entity change needs a new migration (never edit an applied one) |
 

@@ -5,15 +5,17 @@ import com.moviehub.catalog.domain.MovieEntity
 import com.moviehub.catalog.domain.MovieRepository
 import com.moviehub.catalog.domain.NotFoundException
 import com.moviehub.catalog.domain.PersonRepository
-import com.moviehub.catalog.domain.Role
 import com.moviehub.catalog.domain.ValidationException
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Clock
 import java.time.Instant
-import java.time.LocalDate
 
+/**
+ * Persistence and database-backed rules only. Request validation happens before the call,
+ * in [com.moviehub.catalog.grpc.RequestValidator].
+ */
 @Service
 class MovieService(
     private val movies: MovieRepository,
@@ -34,7 +36,7 @@ class MovieService(
 
     @Transactional
     fun create(command: MovieCommand): MovieView {
-        val clean = validate(command)
+        val clean = command
         val now = Instant.now(clock)
         val movie = MovieEntity(
             title = clean.title,
@@ -52,7 +54,7 @@ class MovieService(
     @Transactional
     fun update(id: String, command: MovieCommand): MovieView {
         val movie = find(id)
-        val clean = validate(command)
+        val clean = command
         movie.title = clean.title
         movie.synopsis = clean.synopsis
         movie.releaseYear = clean.releaseYear
@@ -95,42 +97,5 @@ class MovieService(
                 )
             }
         }
-    }
-
-    private fun validate(command: MovieCommand): MovieCommand {
-        val title = command.title.trim()
-        if (title.isEmpty()) throw ValidationException("title must not be blank")
-        if (title.length > 200) throw ValidationException("title must be at most 200 characters")
-
-        val synopsis = command.synopsis.trim()
-        if (synopsis.length > 4000) throw ValidationException("synopsis must be at most 4000 characters")
-
-        val maxYear = LocalDate.now(clock).year + 10
-        if (command.releaseYear !in 1888..maxYear) {
-            throw ValidationException("releaseYear must be between 1888 and $maxYear")
-        }
-        if (command.runtimeMinutes !in 0..1000) {
-            throw ValidationException("runtimeMinutes must be between 0 and 1000 (0 = unknown)")
-        }
-
-        val genres = command.genres.map { it.trim() }.filter { it.isNotEmpty() }
-            .distinctBy { it.lowercase() }
-        if (genres.size > 10) throw ValidationException("a movie can have at most 10 genres")
-        if (genres.any { it.length > 50 }) throw ValidationException("a genre must be at most 50 characters")
-
-        val credits = command.credits.map { credit ->
-            if (credit.personId.isBlank()) throw ValidationException("credit personId must not be blank")
-            val character = credit.characterName.trim()
-            if (character.length > 200) throw ValidationException("characterName must be at most 200 characters")
-            if (credit.role != Role.ACTOR && character.isNotEmpty()) {
-                throw ValidationException("characterName is only allowed for the ACTOR role")
-            }
-            credit.copy(characterName = character)
-        }
-        if (credits.distinctBy { it.personId to it.role }.size != credits.size) {
-            throw ValidationException("duplicate credit (same person and role)")
-        }
-
-        return command.copy(title = title, synopsis = synopsis, genres = genres, credits = credits)
     }
 }

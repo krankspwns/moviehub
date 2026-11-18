@@ -121,6 +121,27 @@ class CatalogGrpcServiceTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `invalid requests are rejected before reaching the services and leave data untouched`() {
+        val movie = stub.createMovie(movieInput("Heat"))
+        val person = stub.createPerson(personInput("Keep"))
+
+        val badMovie = movieInput("x".repeat(201))
+        assertEquals(
+            Status.Code.INVALID_ARGUMENT,
+            status { stub.updateMovie(UpdateMovieRequest.newBuilder().setId(movie.id).setMovie(badMovie).build()) },
+        )
+        assertEquals("Heat", stub.getMovie(id(movie.id)).title)
+
+        val badPerson = PersonInput.newBuilder().setName("x").setBirthDate("2999-01-01").build()
+        assertEquals(Status.Code.INVALID_ARGUMENT, status { stub.createPerson(badPerson) })
+        assertEquals(
+            Status.Code.INVALID_ARGUMENT,
+            status { stub.updatePerson(UpdatePersonRequest.newBuilder().setId(person.id).setPerson(badPerson).build()) },
+        )
+        assertEquals("Keep", stub.getPerson(id(person.id)).name)
+    }
+
+    @Test
     fun `credit with unspecified role is rejected`() {
         val p = stub.createPerson(personInput("X"))
         val code = status { stub.createMovie(movieInput("T", CreditInput.newBuilder().setPersonId(p.id).build())) }

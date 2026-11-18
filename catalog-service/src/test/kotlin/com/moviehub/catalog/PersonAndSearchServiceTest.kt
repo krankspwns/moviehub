@@ -28,8 +28,8 @@ class PersonServiceTest : IntegrationTestBase() {
         movies.create(MovieCommand(title, "", 2000, 100, emptyList(), credits.toList()))
 
     @Test
-    fun `create stores trimmed fields and birth date`() {
-        val p = people.create(PersonCommand("  Ada Lovelace ", " pioneer ", "1815-12-10"))
+    fun `create stores fields and birth date`() {
+        val p = people.create(PersonCommand("Ada Lovelace", "pioneer", "1815-12-10"))
         assertEquals("Ada Lovelace", p.name)
         assertEquals("pioneer", p.bio)
         assertEquals(LocalDate.of(1815, 12, 10), p.birthDate)
@@ -39,18 +39,6 @@ class PersonServiceTest : IntegrationTestBase() {
     @Test
     fun `blank birth date means unknown`() {
         assertNull(people.create(PersonCommand("Anon", birthDate = "  ")).birthDate)
-    }
-
-    @Test
-    fun `invalid input is rejected`() {
-        assertThrows<ValidationException> { people.create(PersonCommand("  ")) }
-        assertThrows<ValidationException> { people.create(PersonCommand("n".repeat(201))) }
-        assertThrows<ValidationException> { people.create(PersonCommand("x", bio = "b".repeat(4001))) }
-        assertThrows<ValidationException> { people.create(PersonCommand("x", birthDate = "10/12/1815")) }
-        assertThrows<ValidationException> { people.create(PersonCommand("x", birthDate = "2023-02-30")) }
-        assertThrows<ValidationException> {
-            people.create(PersonCommand("x", birthDate = LocalDate.now().plusDays(1).toString()))
-        }
     }
 
     @Test
@@ -68,11 +56,8 @@ class PersonServiceTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `update unknown person throws NotFound and invalid update keeps data`() {
+    fun `update unknown person throws NotFound`() {
         assertThrows<NotFoundException> { people.update("missing", PersonCommand("x")) }
-        val p = people.create(PersonCommand("Keep"))
-        assertThrows<ValidationException> { people.update(p.id, PersonCommand("")) }
-        assertEquals("Keep", people.get(p.id).name)
     }
 
     @Test

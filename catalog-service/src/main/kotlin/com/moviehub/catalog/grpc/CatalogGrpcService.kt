@@ -15,7 +15,8 @@ import net.devh.boot.grpc.server.service.GrpcService
 private const val DOWNLOAD_CHUNK_SIZE = 64 * 1024
 
 /**
- * Thin transport adapter: maps protobuf <-> domain types and delegates to the services.
+ * Thin transport adapter: maps protobuf <-> domain types, validates requests with [RequestValidator]
+ * and delegates to the services.
  * Exceptions thrown from unary/server-streaming calls are translated by [GrpcExceptionAdvice].
  */
 @GrpcService
@@ -24,6 +25,7 @@ class CatalogGrpcService(
     private val people: PersonService,
     private val search: SearchService,
     private val artwork: ArtworkService,
+    private val validator: RequestValidator,
 ) : CatalogServiceGrpc.CatalogServiceImplBase() {
 
     // ---- Movies ----
@@ -39,10 +41,10 @@ class CatalogGrpcService(
     override fun getMovie(request: GetByIdRequest, observer: StreamObserver<Movie>) = observer.reply { movies.get(request.id).toProto() }
 
     override fun createMovie(request: MovieInput, observer: StreamObserver<Movie>) =
-        observer.reply { movies.create(request.toCommand()).toProto() }
+        observer.reply { movies.create(validator.movie(request.toCommand())).toProto() }
 
     override fun updateMovie(request: UpdateMovieRequest, observer: StreamObserver<Movie>) =
-        observer.reply { movies.update(request.id, request.movie.toCommand()).toProto() }
+        observer.reply { movies.update(request.id, validator.movie(request.movie.toCommand())).toProto() }
 
     override fun deleteMovie(request: GetByIdRequest, observer: StreamObserver<DeleteResponse>) =
         observer.reply { DeleteResponse.newBuilder().setDeleted(movies.delete(request.id)).build() }
@@ -60,10 +62,10 @@ class CatalogGrpcService(
     override fun getPerson(request: GetByIdRequest, observer: StreamObserver<Person>) = observer.reply { people.get(request.id).toProto() }
 
     override fun createPerson(request: PersonInput, observer: StreamObserver<Person>) =
-        observer.reply { people.create(request.toCommand()).toProto() }
+        observer.reply { people.create(validator.person(request.toCommand())).toProto() }
 
     override fun updatePerson(request: UpdatePersonRequest, observer: StreamObserver<Person>) =
-        observer.reply { people.update(request.id, request.person.toCommand()).toProto() }
+        observer.reply { people.update(request.id, validator.person(request.person.toCommand())).toProto() }
 
     override fun deletePerson(request: GetByIdRequest, observer: StreamObserver<DeleteResponse>) =
         observer.reply { DeleteResponse.newBuilder().setDeleted(people.delete(request.id)).build() }

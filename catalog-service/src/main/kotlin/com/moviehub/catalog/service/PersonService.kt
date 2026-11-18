@@ -4,14 +4,12 @@ import com.moviehub.catalog.domain.NotFoundException
 import com.moviehub.catalog.domain.PersonEntity
 import com.moviehub.catalog.domain.PersonRepository
 import com.moviehub.catalog.domain.Role
-import com.moviehub.catalog.domain.ValidationException
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
-import java.time.format.DateTimeParseException
 
 @Service
 class PersonService(private val people: PersonRepository, private val artworkStorage: ArtworkStorage, private val clock: Clock) {
@@ -29,7 +27,7 @@ class PersonService(private val people: PersonRepository, private val artworkSto
 
     @Transactional
     fun create(command: PersonCommand): PersonView {
-        val clean = validate(command)
+        val clean = command
         val now = Instant.now(clock)
         val person = PersonEntity(
             name = clean.name,
@@ -44,7 +42,7 @@ class PersonService(private val people: PersonRepository, private val artworkSto
     @Transactional
     fun update(id: String, command: PersonCommand): PersonView {
         val person = find(id)
-        val clean = validate(command)
+        val clean = command
         person.name = clean.name
         person.bio = clean.bio
         person.birthDate = parseDate(clean.birthDate)
@@ -63,25 +61,6 @@ class PersonService(private val people: PersonRepository, private val artworkSto
 
     private fun find(id: String): PersonEntity = people.findById(id).orElseThrow { NotFoundException("Person $id not found") }
 
-    private fun validate(command: PersonCommand): PersonCommand {
-        val name = command.name.trim()
-        if (name.isEmpty()) throw ValidationException("name must not be blank")
-        if (name.length > 200) throw ValidationException("name must be at most 200 characters")
-        val bio = command.bio.trim()
-        if (bio.length > 4000) throw ValidationException("bio must be at most 4000 characters")
-        parseDate(command.birthDate)
-        return command.copy(name = name, bio = bio, birthDate = command.birthDate.trim())
-    }
-
-    private fun parseDate(raw: String): LocalDate? {
-        val value = raw.trim()
-        if (value.isEmpty()) return null
-        val date = try {
-            LocalDate.parse(value)
-        } catch (e: DateTimeParseException) {
-            throw ValidationException("birthDate must be an ISO-8601 date (yyyy-MM-dd)")
-        }
-        if (date.isAfter(LocalDate.now(clock))) throw ValidationException("birthDate must not be in the future")
-        return date
-    }
+    /** Input is already validated by the request validator, so parsing cannot fail here. */
+    private fun parseDate(raw: String): LocalDate? = raw.trim().takeIf { it.isNotEmpty() }?.let(LocalDate::parse)
 }
